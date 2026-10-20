@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OmniRay: Monocular 3D Reconstruction with Composite Ray Fields</title>
+  <style>
+    /* ── Reset & Base ───────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(to bottom, #ffffff 0%, #f0f2f5 100%);
+      color: #222;
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    a { color: #1a73e8; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Layout ─────────────────────────────────────────── */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
+
+    section {
+      padding: 56px 0 40px;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    section:last-of-type { border-bottom: none; }
+
+    /* ── Header / Title ─────────────────────────────────── */
+    header {
+      background: #ffffff;
+      padding: 60px 24px 48px;
+      text-align: center;
+      border-bottom: 1px solid #e0e0e0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+
+    header h1 {
+      font-size: 2.6rem;
+      font-weight: 700;
+      line-height: 1.3;
+      color: #111;
+      max-width: 980px;
+      margin: 0 auto 20px;
+    }
+
+    .authors {
+      font-size: 1.2rem;
+      color: #444;
+      margin-bottom: 8px;
+    }
+
+    .authors a {
+      color: #1a73e8;
+      transition: color 0.2s;
+    }
+
+    .authors a:hover {
+      color: #1152a8;
+      text-decoration: underline;
+    }
+
+    .affiliations {
+      font-size: 1.05rem;
+      color: #666;
+      margin-bottom: 24px;
+    }
+
+    .venue {
+      margin-top: 14px;
+      font-weight: 600;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      font-size: .95rem;
+      color: #1a73e8;
+    }
+
+    .note {
+      margin-top: 10px;
+      font-size: 0.85rem;
+      color: #888;
+      font-style: italic;
+    }
+
+    /* ── Release links (arXiv / Code / Checkpoint pills) ───── */
+    .release-links {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .pill-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 18px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      background: #1a73e8;
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(26,115,232,0.25);
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+
+    .pill-btn:hover {
+      background: #1152a8;
+      text-decoration: none;
+      box-shadow: 0 3px 10px rgba(26,115,232,0.35);
+    }
+
+    .pill-btn.disabled {
+      background: #e8eaed;
+      color: #888;
+      box-shadow: none;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    /* ── Section Headings ───────────────────────────────── */
+    h2 {
+      font-size: 1.85rem;
+      font-weight: 700;
+      margin-bottom: 24px;
+      color: #111;
+      text-align: center;
+    }
+
+    h3 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin: 0 0 16px;
+      color: #333;
+      text-align: center;
+    }
+
+    h3.sub-heading {
+      margin-top: 48px;
+    }
+
+    /* ── Figures & Click-to-Zoom Overlay ────────────────── */
+    figure {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .image-link {
+      position: relative;
+      display: block;
+      width: 100%;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      cursor: zoom-in;
+    }
+
+    .image-link::after {
+      content: "Click to open in full resolution";
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.65);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.05rem;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .image-link:hover::after {
+      opacity: 1;
+    }
+
+    figure img {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #f8f9fa;
+      transition: transform 0.3s ease;
+    }
+
+    .image-link:hover img {
+      transform: scale(1.02);
+    }
+
+    #teaser .image-link { max-width: 78%; margin: 0 auto; }
+
+    figcaption {
+      margin-top: 12px;
+      font-size: 0.95rem;
+      color: #555;
+      line-height: 1.5;
+      text-align: justify;
+      width: 100%;
+    }
+
+    figcaption strong { color: #222; }
+
+    /* ── Abstract & Text Blocks ─────────────────────────── */
+    .text-block p {
+      font-size: 1.15rem;
+      text-align: justify;
+      max-width: 950px;
+      margin: 0 auto;
+      color: #444;
+    }
+
+    .text-block p + p { margin-top: 18px; }
+
+    .intro-text {
+      font-size: 1.08rem;
+      text-align: justify;
+      max-width: 950px;
+      margin: 0 auto 36px;
+      color: #444;
+    }
+
+    /* ── Layout: Side by Side (Tables & Images) ─────────── */
+    .side-by-side {
+      display: flex;
+      flex-direction: row;
+      gap: 32px;
+      align-items: center;
+      margin-bottom: 48px;
+    }
+
+    .side-by-side > div,
+    .side-by-side > figure {
+      flex: 1;
+      min-width: 0;
+    }
+
+    /* ── Tabs ───────────────────────────────────────────── */
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin: 8px 0 32px;
+      border-bottom: 1px solid #e2e2e2;
+      padding-bottom: 16px;
+    }
+    .tab {
+      font: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #555;
+      background: #f4f5f7;
+      border: 1px solid #e2e2e2;
+      border-radius: 999px;
+      padding: 9px 20px;
+      cursor: pointer;
+      transition: background .15s, color .15s, border-color .15s;
+    }
+    .tab:hover { background: #e9ebef; color: #222; }
+    .tab[aria-selected="true"] {
+      background: #2b6cb0;
+      border-color: #2b6cb0;
+      color: #fff;
+    }
+    .tab:focus-visible { outline: 2px solid #2b6cb0; outline-offset: 2px; }
+    .panel { display: none; }
+    .panel[data-active="true"] { display: block; }
+
+    /* Stacked results: every figure and table gets the full column, one per row.
+       max-width:100% means an image is never stretched past its natural size. */
+    .stack > figure,
+    .stack > .table-wrapper,
+    .stack > .panel-note { margin: 0 auto 52px; width: 100%; }
+    .stack > figure:last-child,
+    .stack > .table-wrapper:last-child,
+    .stack > .panel-note:last-child { margin-bottom: 8px; }
+    .stack figure img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+    .panel-note {
+      font-size: 0.9rem;
+      color: #555;
+      max-width: 950px;
+      line-height: 1.6;
+      text-align: justify;
+    }
+
+    /* ── Layout: Grid ────────────────────────────────────── */
+    .vis-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 28px;
+      margin-top: 24px;
+    }
+
+    /* ── Tables ─────────────────────────────────────────── */
+    .table-wrapper {
+      overflow-x: auto;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      border-radius: 8px;
+      background: #fff;
+      width: 100%;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+
+    caption {
+      caption-side: bottom;
+      font-size: 0.9rem;
+      color: #555;
+      text-align: left;
+      padding: 12px 0 0;
+      line-height: 1.4;
+    }
+    caption strong { color: #222; }
+
+    thead tr {
+      background: #f8f9fa;
+      border-bottom: 2px solid #dce2ee;
+    }
+
+    th, td {
+      padding: 7px 6px;
+      border: 1px solid #edf1f7;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    th {
+      font-weight: 600;
+      color: #333;
+    }
+
+    tbody tr:nth-child(even) { background: #fafbfc; }
+    tbody tr:hover { background: #f0f4ff; }
+    tr.highlight { background: #eef3ff !important; }
+
+    .best { font-weight: 700; color: #1a56db; }
+
+    /* ── Footer ─────────────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 32px 16px;
+      font-size: 0.85rem;
+      color: #777;
+      border-top: 1px solid #e0e0e0;
+      background: #fafafa;
+    }
+
+    /* ── Responsive ─────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .side-by-side { flex-direction: column; }
+      .vis-grid { grid-template-columns: 1fr; }
+      #teaser .image-link { max-width: 100%; }
+    }
+
+    @media (max-width: 640px) {
+      header h1 { font-size: 1.8rem; }
+      h2 { font-size: 1.4rem; }
+      h3 { font-size: 1.1rem; }
+      .text-block p, .intro-text { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>OmniRay: Monocular 3D Reconstruction with Composite Ray Fields</h1>
+
+    <p class="authors">
+      <a href="https://nam1410.github.io/" target="_blank" rel="noopener">Namitha Guruprasad</a><sup>1</sup>,&nbsp;
+      <a href="https://scholar.google.com/citations?user=pbRu-GQAAAAJ&amp;hl=en&amp;oi=ao" target="_blank" rel="noopener">Abhay Yadav</a><sup>1</sup>,&nbsp;
+      <a href="https://scholar.google.com/citations?user=HiQ4T3wAAAAJ&amp;hl=en&amp;oi=sra" target="_blank" rel="noopener">Cheng Peng</a><sup>2</sup>,&nbsp;
+      <a href="https://scholar.google.com/citations?user=L60tuywAAAAJ&amp;hl=en" target="_blank" rel="noopener">Rama Chellappa</a><sup>1</sup>,&nbsp;
+      <a href="https://scholar.google.com/citations?user=XUsauXIAAAAJ&amp;hl=en" target="_blank" rel="noopener">Anand Bhattad</a><sup>1</sup>
+    </p>
+    <p class="affiliations">
+      <sup>1</sup>Johns Hopkins University, USA,&nbsp;
+      <sup>2</sup>University of Virginia, USA
+    </p>
+
+    <p class="venue">Under Review</p>
+    <p class="note">Code and models are planned to be open-sourced upon publication.</p>
+
+    <!--
+      All four links are placeholders, deliberately. OmniRay's code and checkpoint are
+      NOT being released at this time; the arXiv entry does not exist yet. Replace an
+      href="#" with a real URL only when that artefact actually exists.
+      NOTE: the checkpoint at ../cam3r/cam3r_release_weights.pth is CAM3R's, not
+      OmniRay's -- it belongs on the cam3r site, never here.
+    -->
+    <div class="release-links">
+      <a class="pill-btn disabled" href="#" aria-disabled="true">&#128196; arXiv</a>
+      <a class="pill-btn disabled" href="#" aria-disabled="true">&#128187; Code</a>
+      <a class="pill-btn disabled" href="#" aria-disabled="true">&#127916; Demo</a>
+      <a class="pill-btn disabled" href="#" aria-disabled="true">&#128230; Checkpoint</a>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <section id="teaser">
+      <figure>
+        <a href="static/images/teaser.png" target="_blank" class="image-link" aria-label="Open image in full resolution">
+          <img src="static/images/teaser.png" alt="OmniRay reconstructs 3D geometry from a single image across pinhole, fisheye, and panoramic cameras" />
+        </a>
+        <figcaption>
+          <strong>Fig. 1 &mdash; </strong>OmniRay reconstructs 3D geometry from a single image across diverse camera geometries without requiring camera intrinsics or camera-type input. Each column shows an input image and its predicted camera-frame pointcloud, recovered up to scale.
+        </figcaption>
+      </figure>
+    </section>
+
+    <section id="abstract" class="text-block">
+      <h2>Abstract</h2>
+      <p>
+        Monocular models recover 3D geometry from a single image in one pass, but most assume a pinhole camera and produce distorted geometry on the wide-angle imagery produced by fisheye and panoramic lenses. Camera-aware models remove this assumption by predicting a per-pixel ray field. However, they represent different camera geometries using a <i>single fixed basis</i> to capture both the overall camera projection and its finer variations. We argue that camera geometry has a hierarchy of complexity and that the ray representation should follow it. We present <strong>OmniRay</strong>, a feed-forward model whose ray module is composed of three components: a monotone radial base that captures radially symmetric structure, a spherical-harmonic residual for smooth deviations from it, and a free-form residual for remaining local variation. These components are composed as successive rotations on the sphere, allowing the representation to accommodate diverse camera geometries. Given a single image, OmniRay predicts a ray direction and an up-to-scale radial distance for every pixel, from which a 3D pointcloud is recovered without needing camera information at inference time.
+      </p>
+      <p>
+        Extensive experiments across different camera configurations demonstrate that OmniRay establishes a new state-of-the-art in camera-agnostic monocular 3D reconstruction.
+      </p>
+    </section>
+
+    <section id="overview">
+      <h2>Overview</h2>
+      <p class="intro-text">
+        Given a single image from an arbitrary central camera &mdash; with no intrinsics, distortion parameters, or camera-type label &mdash; OmniRay predicts for every pixel <i>u</i> a unit ray direction <strong>d</strong>(<i>u</i>) and a radial distance &rho;(<i>u</i>) &gt; 0. A DINOv2 ViT-L/14 encoder produces features that drive two branches: the <strong>Ray Module</strong> composes <strong>d</strong> from a monotone radial base, a spherical-harmonic residual, and a free-form residual, each applied as a rotation on the sphere so every component refines the ray produced by the one before it; the <strong>Distance Module</strong> predicts &rho;. Their combination gives the 3D point in the camera frame, <strong>P</strong>(<i>u</i>) = &rho;(<i>u</i>)&nbsp;<strong>d</strong>(<i>u</i>), recovered up to a single global scale.
+      </p>
+      <figure>
+        <a href="static/images/architecture.png" target="_blank" class="image-link" aria-label="Open image in full resolution">
+          <img src="static/images/architecture.png" alt="OmniRay architecture: DINOv2 encoder feeding a Ray Module and a Distance Module" />
+        </a>
+        <figcaption>
+          <strong>Fig. 2 &mdash; OmniRay Overview.</strong> Given a single image, a DINOv2 ViT-L/14 encoder produces global and dense features that drive two branches. The <strong><i>Ray Module</i></strong> progressively builds a camera-agnostic ray field from a monotone radial base, a spherical-harmonic residual, and a free-form residual. The <strong><i>Distance Module</i></strong> predicts a positive radial distance for each pixel. Combining the final ray <strong>d</strong> and distance &rho; yields the local pointmap <strong>P</strong> = &rho;&nbsp;<strong>d</strong>, recovering 3D geometry up to scale without camera intrinsics or a camera-type label.
+        </figcaption>
+      </figure>
+
+      <h3 class="sub-heading">Why Compose Ray Representations?</h3>
+      <div class="stack">
+        <figure>
+          <a href="static/images/intuition.png" target="_blank" class="image-link" aria-label="Open image in full resolution">
+            <img src="static/images/intuition.png" alt="Why combine the radial construction with residual corrections" />
+          </a>
+          <figcaption>
+            <strong>Fig. 3 &mdash; Why combine the radial construction with the residual corrections?</strong> (a) The radial representation gives the same incidence angle to pixels that lie at the same radius in the base coordinates. (b) In the centered 2:1 equirectangular projection, point B is closer to the center of the image than point A, yet has a lower incidence angle &mdash; a monotonic radial function cannot accommodate such ordering under a fixed coordinate transformation and orientation. (c) The spherical-harmonic and free-form residuals improve upon the base direction via iterative correction on the unit sphere.
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="results">
+      <h2>Results</h2>
+
+      <div class="tabs" role="tablist" aria-label="Results">
+        <button class="tab" role="tab" id="t-figs" aria-controls="p-figs" aria-selected="true">Figure Results</button>
+        <button class="tab" role="tab" id="t-tables" aria-controls="p-tables" aria-selected="false">Table Results</button>
+        <button class="tab" role="tab" id="t-abl" aria-controls="p-abl" aria-selected="false">Ablation</button>
+        <button class="tab" role="tab" id="t-vis" aria-controls="p-vis" aria-selected="false">Additional Visualizations</button>
+      </div>
+
+      <div class="panel stack" id="p-figs" role="tabpanel" aria-labelledby="t-figs" data-active="true">
+        <figure>
+          <a href="static/images/qualitative_unseen.png" target="_blank" class="image-link" aria-label="Open image in full resolution">
+            <img src="static/images/qualitative_unseen.png" alt="Qualitative reconstructions on unseen datasets PanoCity and CO3Dv2" />
+          </a>
+          <figcaption>
+            <strong>Fig. 4 &mdash; Qualitative reconstructions on unseen datasets.</strong> We compare OmniRay with Depth Anything 3 and UniK3D on PanoCity and CO3Dv2 across five camera configurations. Small visualizations show viewing-ray fields; larger renderings show the corresponding pointclouds, with ground truth in the rightmost column. OmniRay better preserves scene structure in the panoramic and catadioptric examples without camera intrinsics or camera-type input.
+          </figcaption>
+        </figure>
+        <p class="panel-note">On seen camera types, OmniRay achieves a mean ray error of 0.14&deg; and relative Chamfer distance of 0.0179, compared with 6.34&deg; and 0.0760 for UniK3D and 33.03&deg; and 0.1999 for Depth Anything 3. On the Nayar catadioptric camera &mdash; held out entirely from training &mdash; all baselines exceed 75&deg; while OmniRay achieves 1.12&deg; and 0.0131 CD; on the held-out GoPro fisheye, OmniRay achieves 5.53&deg; versus 6.34&deg; for UniK3D. On the unseen PanoCity dataset, OmniRay achieves 1.35&deg; ray error versus 21.22&deg; and 50.53&deg; for UniK3D and DA3. On CO3Dv2, OmniRay's 2.97&deg; ray error remains within a degree of both baselines.</p>
+      </div>
+
+      <div class="panel stack" id="p-tables" role="tabpanel" aria-labelledby="t-tables">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Representation</th>
+                <th>#Params</th>
+                <th>Fisheye</th>
+                <th>Equirect.</th>
+                <th>Catadioptric</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Pinhole</td><td>6</td><td>5.731</td><td>48.080</td><td>50.434</td></tr>
+              <tr><td>Double sphere</td><td>8</td><td>0.021</td><td>22.932</td><td>41.876</td></tr>
+              <tr><td>Radial (K=16)</td><td>24</td><td class="best">0.002</td><td>22.802</td><td>0.104</td></tr>
+              <tr><td>Radial (K=32)</td><td>40</td><td class="best">0.002</td><td>22.801</td><td class="best">0.023</td></tr>
+              <tr><td>SH (L=7)</td><td>195</td><td>0.276</td><td>0.641</td><td>0.295</td></tr>
+              <tr class="highlight"><td><strong>Radial&#8321;&#8326; + SH&#8321; residual (ours)</strong></td><td>216</td><td>0.075</td><td class="best">0.217</td><td>0.174</td></tr>
+              <tr><td>Free field</td><td>76.8k</td><td>0.005</td><td>0.013</td><td>0.015</td></tr>
+            </tbody>
+            <caption>
+              <strong>Table 1 &mdash; Oracle representation fitting.</strong> Mean angular error in degrees after fitting each representation directly to ground-truth rays; lower is better. #Params denotes parameters per camera. Best results among compact representations are bold. The free field is a high-capacity reference, not a compact representation.
+            </caption>
+          </table>
+        </div>
+        <div class="table-wrapper" style="margin-bottom: 28px;">
+        <table>
+          <thead>
+            <tr>
+              <th rowspan="2">Method</th>
+              <th colspan="2">Seen cameras</th>
+              <th colspan="2">Catadioptric&dagger;</th>
+              <th colspan="2">GoPro&dagger;</th>
+              <th colspan="2">PanoCity&dagger;</th>
+              <th colspan="2">CO3Dv2&dagger;</th>
+            </tr>
+            <tr>
+              <th>Ang.&deg;</th><th>CD</th>
+              <th>Ang.&deg;</th><th>CD</th>
+              <th>Ang.&deg;</th><th>CD</th>
+              <th>Ang.&deg;</th><th>CD</th>
+              <th>Ang.&deg;</th><th>CD</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>GeoCalib</td><td>30.997</td><td>&ndash;</td><td>119.662</td><td>&ndash;</td><td>14.126</td><td>&ndash;</td><td>47.132</td><td>&ndash;</td><td>3.713</td><td>&ndash;</td></tr>
+            <tr><td>AnyCalib</td><td>28.655</td><td>&ndash;</td><td>107.129</td><td>&ndash;</td><td>10.031</td><td>&ndash;</td><td>42.335</td><td>&ndash;</td><td>2.711</td><td>&ndash;</td></tr>
+            <tr><td>DA3</td><td>33.028</td><td>0.1999</td><td>121.566</td><td>1.0412</td><td>16.637</td><td>0.1097</td><td>50.533</td><td>0.3677</td><td class="best">2.041</td><td>0.0288</td></tr>
+            <tr><td>UniK3D</td><td>6.336</td><td>0.0760</td><td>75.702</td><td>0.5948</td><td>6.342</td><td>0.0454</td><td>21.220</td><td>0.2120</td><td>2.676</td><td class="best">0.0277</td></tr>
+            <tr><td>OmniRay w/o AUG</td><td>1.385</td><td>0.0592</td><td>30.867</td><td>0.3440</td><td>7.965</td><td>0.0641</td><td>6.352</td><td>0.0984</td><td>2.825</td><td>0.0330</td></tr>
+            <tr><td>OmniRay + RG</td><td>0.356</td><td>0.0205</td><td class="best">1.118</td><td class="best">0.0113</td><td class="best">5.180</td><td class="best">0.0375</td><td>1.592</td><td>0.0277</td><td>2.935</td><td>0.0411</td></tr>
+            <tr class="highlight"><td><strong>OmniRay</strong></td><td class="best">0.140</td><td class="best">0.0179</td><td>1.120</td><td>0.0131</td><td>5.533</td><td>0.0392</td><td class="best">1.350</td><td class="best">0.0240</td><td>2.967</td><td>0.0380</td></tr>
+          </tbody>
+        </table>
+      </div>
+        <p class="panel-note">
+        <strong>Table 2 &mdash; Main benchmark.</strong> Results on seen cameras, held-out cameras, and held-out domains. Ang. denotes mean ray error in degrees; CD denotes median relative Chamfer distance, normalized by each scene's mean point norm. Metrics are macro-averaged over test images; all methods use per-image median scale alignment. Lower is better; best results are bold. &dagger; denotes exclusion from training data; a dash indicates the method does not predict scene geometry.
+      </p>
+      </div>
+
+      <div class="panel stack" id="p-abl" role="tabpanel" aria-labelledby="t-abl">
+        <div class="table-wrapper" style="margin-bottom: 28px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Ray representation</th>
+              <th>Training</th>
+              <th>Panorama</th>
+              <th>Fisheye</th>
+              <th>Pinhole</th>
+              <th>Catadioptric&dagger;</th>
+              <th>GoPro&dagger;</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Radial base</td><td>&ndash;</td><td>21.825</td><td>1.761</td><td>0.788</td><td>6.039</td><td>5.377</td></tr>
+            <tr><td>Spherical base</td><td>&ndash;</td><td>5.088</td><td>1.540</td><td>0.790</td><td>13.327</td><td>5.962</td></tr>
+            <tr><td>Free-form field</td><td>&ndash;</td><td>0.783</td><td>1.508</td><td>0.621</td><td>11.335</td><td>5.191</td></tr>
+            <tr><td>Radial + SH residual</td><td>Joint</td><td>0.796</td><td>1.784</td><td>0.581</td><td>1.879</td><td>6.566</td></tr>
+            <tr><td>Radial + SH residual</td><td>Staged</td><td>0.610</td><td>1.545</td><td>0.675</td><td>1.680</td><td class="best">3.393</td></tr>
+            <tr><td>Radial + free-form</td><td>Joint</td><td>1.018</td><td>1.394</td><td>0.403</td><td>3.038</td><td>3.667</td></tr>
+            <tr><td>Radial + free-form</td><td>Staged</td><td>1.111</td><td>1.605</td><td>0.386</td><td>1.797</td><td>4.248</td></tr>
+            <tr><td>SH + free-form</td><td>Joint</td><td>1.114</td><td>1.747</td><td>1.250</td><td>2.568</td><td>3.739</td></tr>
+            <tr><td>SH + free-form</td><td>Staged</td><td>1.026</td><td>2.567</td><td>0.553</td><td>2.316</td><td>5.142</td></tr>
+            <tr><td>Radial + SH + free-form</td><td>Joint</td><td>0.728</td><td>1.963</td><td>0.688</td><td>2.525</td><td>3.636</td></tr>
+            <tr><td>Radial + SH + free-form</td><td>Joint, &gamma;&#8320;=&gamma;&#8321;=0</td><td>0.451</td><td>1.864</td><td>0.705</td><td>1.838</td><td>3.604</td></tr>
+            <tr><td>Radial + SH + free-form</td><td>Staged, VGGT init</td><td>0.486</td><td>1.630</td><td class="best">0.330</td><td>2.576</td><td>5.142</td></tr>
+            <tr class="highlight"><td><strong>Radial + SH + free-form</strong></td><td>Staged</td><td class="best">0.399</td><td class="best">1.322</td><td>0.418</td><td class="best">1.538</td><td>3.462</td></tr>
+          </tbody>
+        </table>
+      </div>
+        <p class="panel-note">
+        <strong>Table 3 &mdash; Ray representation ablation.</strong> Mean angular ray error in degrees (lower is better) at native resolution. Seen camera families are evaluated on held-out configurations; &dagger; denotes configurations excluded from training. Only the ray module is trained and evaluated. Best results are bold.
+      </p>
+        <figure>
+          <a href="static/images/ablation.png" target="_blank" class="image-link" aria-label="Open image in full resolution">
+            <img src="static/images/ablation.png" alt="Ablation: random-lens augmentation and progressive residual composition" />
+          </a>
+          <figcaption>
+            <strong>Fig. 5 &mdash; Ablation.</strong> <strong>(a)</strong> Held-out catadioptric camera: predicted ray field and pointcloud for UniK3D, OmniRay trained without random-lens augmentation, and the full model, against the ground truth. <strong>(b)</strong> Panoramic image: the radial base alone covers only part of the sphere (orange) and leaves the reconstruction torn, while the spherical-harmonic and free-form residuals complete the field (blue) and close the geometry.
+          </figcaption>
+        </figure>
+        <p class="panel-note">No single basis suffices, and each one fails on a different geometry: the radial base collapses on the panorama (21.83&deg;), where no monotone profile can express the field; the spherical base collapses on the catadioptric mirror (13.33&deg;); and the free-form field, while the most accurate single basis on every camera seen in training, also degrades on the held-out catadioptric geometry. These failures are disjoint, motivating the composition of all three bases rather than selecting the single best one. Random-lens augmentation is similarly important: without it, held-out catadioptric and GoPro ray error rise to 30.87&deg; and 7.97&deg;; restoring it recovers 1.12&deg; and 5.53&deg; and improves the seen cameras to 0.14&deg;.</p>
+      </div>
+
+      <div class="panel stack" id="p-vis" role="tabpanel" aria-labelledby="t-vis">
+        <figure>
+          <a href="static/images/in_the_wild.png" target="_blank" class="image-link" aria-label="Open image in full resolution">
+            <img src="static/images/in_the_wild.png" alt="In-the-wild reconstructions on internet photographs" />
+          </a>
+          <figcaption>
+            <strong>Fig. 6 &mdash; In-the-wild reconstructions.</strong> Qualitative reconstructions on photographs collected from the internet, shown in order as a panorama, a fisheye image, and a pinhole image. Although these camera families are represented during training, the images come from different camera instances with unknown intrinsics and lens parameters. OmniRay requires no camera metadata at inference.
+          </figcaption>
+        </figure>
+        <figure>
+          <a href="static/images/random_lens_aug.png" target="_blank" class="image-link" aria-label="Open image in full resolution">
+            <img src="static/images/random_lens_aug.png" alt="Random-lens augmentation sampling examples" />
+          </a>
+          <figcaption>
+            <strong>Fig. 7 &mdash; Random-lens augmentation.</strong> Images rendered from a single panorama under cameras drawn from the training sampling distribution. A camera is a viewing direction, a monotone radial profile, and an imaged sensor region, so one family spans narrow perspective crops, wide-angle and fisheye views, off-center and anisotropic sensors, and annular domains. The projection varies continuously from sample to sample, so no fixed map from image position to ray direction fits more than one of them. Draws falling close to either held-out geometry are rejected and never enter training.
+          </figcaption>
+        </figure>
+        <figure>
+          <a href="static/images/qualitative_2d3ds.png" target="_blank" class="image-link" aria-label="Open image in full resolution">
+            <img src="static/images/qualitative_2d3ds.png" alt="Qualitative reconstructions on the seen 2D3DS dataset" />
+          </a>
+          <figcaption>
+            <strong>Fig. 8 &mdash; Qualitative reconstructions on seen dataset: 2D3DS.</strong>
+          </figcaption>
+        </figure>
+        <figure>
+          <a href="static/images/qualitative_360loc.png" target="_blank" class="image-link" aria-label="Open image in full resolution">
+            <img src="static/images/qualitative_360loc.png" alt="Qualitative reconstructions on the seen 360Loc dataset" />
+          </a>
+          <figcaption>
+            <strong>Fig. 9 &mdash; Qualitative reconstructions on seen dataset: 360Loc.</strong>
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="conclusion" class="text-block">
+      <h2>Conclusion</h2>
+      <p>
+        We began with two questions: how the pixel-to-ray mapping can remain both compact and expressive, and whether a single representation is necessary for every camera geometry? OmniRay answers both by composing the ray field rather than mapping every camera into one basis. A monotone radial base carries the structure conventional lenses already possess, a spherical-harmonic residual supplies the smooth deviations a radial profile cannot express, and a free-form residual accounts for the remaining local variation, each applied as a rotation on the sphere so the representation adapts to the camera without camera-type input or model selection. A shared distance module scales the predicted rays into a point cloud in a single forward pass, and sampling lenses continuously during training keeps the composition accurate on geometries it has never seen.
+      </p>
+      <p>
+        The oracle analysis establishes the ceilings that motivate this design, and the trained model follows them: a mean ray error of 0.14&deg; on the camera families seen in training, and 1.12&deg; on a catadioptric geometry withheld from it, where every baseline exceeds 75&deg;. The reconstruction is recovered only up to a single global scale, so all point clouds are compared after a per-image alignment. Since the representation is defined per image and per pixel, extending OmniRay to <i>N</i>-view reconstruction is a natural next step.
+      </p>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>
+      &copy; 2026 OmniRay Authors &mdash; All rights reserved.
+    </p>
+  </footer>
+
+  <script>
+    (function () {
+      var tabs = Array.prototype.slice.call(document.querySelectorAll('.tabs [role="tab"]'));
+      function show(tab) {
+        tabs.forEach(function (t) {
+          var on = t === tab;
+          t.setAttribute('aria-selected', on ? 'true' : 'false');
+          var p = document.getElementById(t.getAttribute('aria-controls'));
+          if (p) { if (on) { p.setAttribute('data-active', 'true'); } else { p.removeAttribute('data-active'); } }
+        });
+      }
+      tabs.forEach(function (t, i) {
+        t.addEventListener('click', function () { show(t); });
+        t.addEventListener('keydown', function (e) {          // left/right arrows move between tabs
+          var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+          if (!d) { return; }
+          e.preventDefault();
+          var n = tabs[(i + d + tabs.length) % tabs.length];
+          n.focus(); show(n);
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
