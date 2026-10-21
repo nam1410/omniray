@@ -418,7 +418,7 @@
           <img src="static/images/teaser.png" alt="OmniRay reconstructs 3D geometry from a single image across pinhole, fisheye, and panoramic cameras" />
         </a>
         <figcaption>
-          <strong>Fig. 1 &mdash; </strong>OmniRay reconstructs 3D geometry from a single image across diverse camera geometries without requiring camera intrinsics or camera-type input. Each column shows an input image and its predicted camera-frame pointcloud, recovered up to scale.
+          <strong>Fig. 1 &mdash; OmniRay reconstructs 3D geometry from a single image across diverse camera geometries</strong> without requiring camera intrinsics or camera-type input. Each column shows an input image and its predicted camera-frame pointcloud, recovered up to scale.
         </figcaption>
       </figure>
     </section>
@@ -454,7 +454,7 @@
             <img src="static/images/intuition.png" alt="Why combine the radial construction with residual corrections" />
           </a>
           <figcaption>
-            <strong>Fig. 3 &mdash; Why combine the radial construction with the residual corrections?</strong> (a) The radial representation gives the same incidence angle to pixels that lie at the same radius in the base coordinates. (b) In the centered 2:1 equirectangular projection, point B is closer to the center of the image than point A, yet has a lower incidence angle &mdash; a monotonic radial function cannot accommodate such ordering under a fixed coordinate transformation and orientation. (c) The spherical-harmonic and free-form residuals improve upon the base direction via iterative correction on the unit sphere.
+            <strong>Fig. 3 &mdash; Why combine the radial construction with the residual corrections?</strong> (a) The radial representation gives the same incidence angle to pixels that lie at the same radius in the base coordinates. (b) In the centered 2:1 equirectangular projection, point B is closer to the center of the image than point A, yet has a lower incidence angle. A monotonic radial function cannot accommodate such ordering under fixed coordinate transformation and orientation. (c) The spherical-harmonic and free-form residuals improve upon the base direction via iterative correction on the unit sphere.
           </figcaption>
         </figure>
       </div>
@@ -476,10 +476,11 @@
             <img src="static/images/qualitative_unseen.png" alt="Qualitative reconstructions on unseen datasets PanoCity and CO3Dv2" />
           </a>
           <figcaption>
-            <strong>Fig. 4 &mdash; Qualitative reconstructions on unseen datasets.</strong> We compare OmniRay with Depth Anything 3 and UniK3D on PanoCity and CO3Dv2 across five camera configurations. Small visualizations show viewing-ray fields; larger renderings show the corresponding pointclouds, with ground truth in the rightmost column. OmniRay better preserves scene structure in the panoramic and catadioptric examples without camera intrinsics or camera-type input.
+            <strong>Fig. 4 &mdash; Qualitative reconstructions on <u>unseen</u> datasets.</strong> We compare OmniRay with Depth Anything 3 and UniK3D on PanoCity and CO3Dv2 across five camera configurations. Small visualizations show viewing-ray fields; larger renderings show the corresponding pointclouds, with ground truth in the rightmost column. OmniRay better preserves scene structure in the panoramic and catadioptric examples without camera intrinsics or camera-type input.
           </figcaption>
         </figure>
         <p class="panel-note">On seen camera types, OmniRay achieves a mean ray error of 0.14&deg; and relative Chamfer distance of 0.0179, compared with 6.34&deg; and 0.0760 for UniK3D and 33.03&deg; and 0.1999 for Depth Anything 3. On the Nayar catadioptric camera &mdash; held out entirely from training &mdash; all baselines exceed 75&deg; while OmniRay achieves 1.12&deg; and 0.0131 CD; on the held-out GoPro fisheye, OmniRay achieves 5.53&deg; versus 6.34&deg; for UniK3D. On the unseen PanoCity dataset, OmniRay achieves 1.35&deg; ray error versus 21.22&deg; and 50.53&deg; for UniK3D and DA3. On CO3Dv2, OmniRay's 2.97&deg; ray error remains within a degree of both baselines.</p>
+        <p class="panel-note">Fig. 4 compares ray fields and camera-frame pointclouds on unseen PanoCity and CO3Dv2 images, with each ray field colored by its angular error. On the panorama, OmniRay keeps the road continuous while UniK3D breaks it across the image and DA3 fails to recover the ground structure. On the fisheye and GoPro rows, OmniRay keeps the road, pavement and lane markings straight where UniK3D bends them and DA3 also distorts the surrounding buildings. On the held-out catadioptric camera both baselines produce degraded reconstructions. On the CO3Dv2 pinhole example, OmniRay remains comparable to the baselines, demonstrating that the additional flexibility for wide-angle cameras does not come at the expense of pinhole imagery. On in-the-wild images, OmniRay also recovers coherent 3D structure, as shown in Fig. 6.</p>
       </div>
 
       <div class="panel stack" id="p-tables" role="tabpanel" aria-labelledby="t-tables">
@@ -487,10 +488,13 @@
           <table>
             <thead>
               <tr>
-                <th>Representation</th>
-                <th>#Params</th>
+                <th rowspan="2">Representation</th>
+                <th rowspan="2">#Params</th>
+                <th colspan="3">Angular error (&deg;)&darr;</th>
+              </tr>
+              <tr>
                 <th>Fisheye</th>
-                <th>Equirect.</th>
+                <th>Equirectangular</th>
                 <th>Catadioptric</th>
               </tr>
             </thead>
@@ -500,11 +504,11 @@
               <tr><td>Radial (K=16)</td><td>24</td><td class="best">0.002</td><td>22.802</td><td>0.104</td></tr>
               <tr><td>Radial (K=32)</td><td>40</td><td class="best">0.002</td><td>22.801</td><td class="best">0.023</td></tr>
               <tr><td>SH (L=7)</td><td>195</td><td>0.276</td><td>0.641</td><td>0.295</td></tr>
-              <tr class="highlight"><td><strong>Radial&#8321;&#8326; + SH&#8321; residual (ours)</strong></td><td>216</td><td>0.075</td><td class="best">0.217</td><td>0.174</td></tr>
+              <tr class="highlight"><td><strong>Radial&#8321;&#8326; + SH&#8327; residual (ours)</strong></td><td>216</td><td>0.075</td><td class="best">0.217</td><td>0.174</td></tr>
               <tr><td>Free field</td><td>76.8k</td><td>0.005</td><td>0.013</td><td>0.015</td></tr>
             </tbody>
             <caption>
-              <strong>Table 1 &mdash; Oracle representation fitting.</strong> Mean angular error in degrees after fitting each representation directly to ground-truth rays; lower is better. #Params denotes parameters per camera. Best results among compact representations are bold. The free field is a high-capacity reference, not a compact representation.
+              <strong>Table 1 &mdash; Oracle representation fitting.</strong> Mean angular error in degrees after fitting each representation directly to ground-truth rays; lower is better. #Params denotes parameters per camera. Best results among compact representations are bold. The free field is shown separately as a high-capacity reference.
             </caption>
           </table>
         </div>
@@ -512,19 +516,24 @@
         <table>
           <thead>
             <tr>
-              <th rowspan="2">Method</th>
+              <th rowspan="3">Method</th>
               <th colspan="2">Seen cameras</th>
+              <th colspan="4">Held-out cameras</th>
+              <th colspan="4">Held-out domains</th>
+            </tr>
+            <tr>
+              <th colspan="2">Aggregate</th>
               <th colspan="2">Catadioptric&dagger;</th>
               <th colspan="2">GoPro&dagger;</th>
               <th colspan="2">PanoCity&dagger;</th>
               <th colspan="2">CO3Dv2&dagger;</th>
             </tr>
             <tr>
-              <th>Ang.&deg;</th><th>CD</th>
-              <th>Ang.&deg;</th><th>CD</th>
-              <th>Ang.&deg;</th><th>CD</th>
-              <th>Ang.&deg;</th><th>CD</th>
-              <th>Ang.&deg;</th><th>CD</th>
+              <th>Ang.&nbsp;(&deg;)&darr;</th><th>CD&darr;</th>
+              <th>Ang.&nbsp;(&deg;)&darr;</th><th>CD&darr;</th>
+              <th>Ang.&nbsp;(&deg;)&darr;</th><th>CD&darr;</th>
+              <th>Ang.&nbsp;(&deg;)&darr;</th><th>CD&darr;</th>
+              <th>Ang.&nbsp;(&deg;)&darr;</th><th>CD&darr;</th>
             </tr>
           </thead>
           <tbody>
@@ -539,8 +548,149 @@
         </table>
       </div>
         <p class="panel-note">
-        <strong>Table 2 &mdash; Main benchmark.</strong> Results on seen cameras, held-out cameras, and held-out domains. Ang. denotes mean ray error in degrees; CD denotes median relative Chamfer distance, normalized by each scene's mean point norm. Metrics are macro-averaged over test images; all methods use per-image median scale alignment. Lower is better; best results are bold. &dagger; denotes exclusion from training data; a dash indicates the method does not predict scene geometry.
+        <strong>Table 2 &mdash; Main benchmark.</strong> Results on seen cameras, held-out cameras, and held-out domains. Ang. denotes mean ray error in degrees; CD denotes median relative Chamfer distance, normalized by each scene's mean point norm. Metrics are macro-averaged over test images, and all methods use per-image median scale alignment. Lower is better; best results are bold. &dagger; denotes exclusion from our training data; a dash indicates that the method does not predict scene geometry. Full per-camera and per-dataset results and additional metrics are provided in Tables 4&ndash;6 below.
       </p>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th rowspan="2">Camera</th>
+                <th rowspan="2">Method</th>
+                <th colspan="1">Ray</th>
+                <th colspan="2">Radial Dist.</th>
+                <th colspan="4">Pointcloud Quality</th>
+              </tr>
+              <tr>
+                <th>Ang.&nbsp;(&deg;)&darr;</th>
+                <th>AbsRel&darr;</th><th>&delta;&#8321;&uarr;</th>
+                <th>CD&darr;</th><th>Acc&darr;</th><th>Comp&darr;</th><th>F@10cm&uarr;</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td rowspan="5">pinhole</td><td>GeoCalib</td><td>2.196</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td></tr>
+              <tr><td>AnyCalib</td><td>1.043</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td></tr>
+              <tr><td>DA3</td><td>6.604</td><td>0.1508</td><td>0.862</td><td>0.0701</td><td>0.0862</td><td>0.0540</td><td>0.300</td></tr>
+              <tr><td>UniK3D</td><td>3.619</td><td>0.1371</td><td>0.871</td><td>0.1058</td><td>0.1802</td><td>0.0315</td><td>0.356</td></tr>
+              <tr class="highlight"><td><strong>OmniRay</strong></td><td class="best">0.155</td><td class="best">0.0769</td><td class="best">0.925</td><td class="best">0.0242</td><td class="best">0.0355</td><td class="best">0.0130</td><td class="best">0.533</td></tr>
+
+              <tr><td rowspan="5">fisheye</td><td>GeoCalib</td><td>30.001</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td></tr>
+              <tr><td>AnyCalib</td><td>22.134</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td></tr>
+              <tr><td>DA3</td><td>28.727</td><td>0.3225</td><td>0.562</td><td>0.1888</td><td>0.1111</td><td>0.2665</td><td>0.066</td></tr>
+              <tr><td>UniK3D</td><td>7.055</td><td>0.2155</td><td>0.768</td><td>0.0543</td><td>0.0569</td><td>0.0517</td><td>0.198</td></tr>
+              <tr class="highlight"><td><strong>OmniRay</strong></td><td class="best">0.154</td><td class="best">0.0906</td><td class="best">0.924</td><td class="best">0.0159</td><td class="best">0.0197</td><td class="best">0.0121</td><td class="best">0.531</td></tr>
+
+              <tr><td rowspan="5">panoramic</td><td>GeoCalib</td><td>60.795</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td></tr>
+              <tr><td>AnyCalib</td><td>62.788</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td></tr>
+              <tr><td>DA3</td><td>63.752</td><td>0.3352</td><td>0.547</td><td>0.3408</td><td>0.1956</td><td>0.4859</td><td>0.009</td></tr>
+              <tr><td>UniK3D</td><td>8.336</td><td>0.2154</td><td>0.774</td><td>0.0678</td><td>0.0723</td><td>0.0633</td><td>0.174</td></tr>
+              <tr class="highlight"><td><strong>OmniRay</strong></td><td class="best">0.110</td><td class="best">0.0593</td><td class="best">0.949</td><td class="best">0.0137</td><td class="best">0.0163</td><td class="best">0.0111</td><td class="best">0.585</td></tr>
+
+              <tr><td rowspan="5">catadioptric&dagger;</td><td>GeoCalib</td><td>119.662</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td></tr>
+              <tr><td>AnyCalib</td><td>107.129</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td></tr>
+              <tr><td>DA3</td><td>121.566</td><td>0.1617</td><td>0.771</td><td>1.0412</td><td>0.7232</td><td>1.3592</td><td>0.000</td></tr>
+              <tr><td>UniK3D</td><td>75.702</td><td>0.2523</td><td>0.656</td><td>0.5948</td><td>0.5047</td><td>0.6849</td><td>0.004</td></tr>
+              <tr class="highlight"><td><strong>OmniRay</strong></td><td class="best">1.120</td><td class="best">0.0396</td><td class="best">0.969</td><td class="best">0.0131</td><td class="best">0.0130</td><td class="best">0.0131</td><td class="best">0.633</td></tr>
+
+              <tr><td rowspan="5">GoPro&dagger;</td><td>GeoCalib</td><td>14.126</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td></tr>
+              <tr><td>AnyCalib</td><td>10.031</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td></tr>
+              <tr><td>DA3</td><td>16.637</td><td>0.1657</td><td>0.840</td><td>0.1097</td><td>0.0811</td><td>0.1383</td><td>0.079</td></tr>
+              <tr><td>UniK3D</td><td>6.342</td><td>0.1665</td><td>0.857</td><td>0.0454</td><td>0.0449</td><td>0.0458</td><td class="best">0.235</td></tr>
+              <tr class="highlight"><td><strong>OmniRay</strong></td><td class="best">5.533</td><td class="best">0.0842</td><td class="best">0.932</td><td class="best">0.0392</td><td class="best">0.0354</td><td class="best">0.0429</td><td>0.215</td></tr>
+            </tbody>
+            <caption>
+              <strong>Table 4 &mdash; Per-camera results, all metrics.</strong> Macro-averaged over test images. &dagger; geometry withheld from training. Baselines are median-scale-aligned per image. Acc, Comp and CD are medians of the relative distance, divided by each scene's mean point norm. &delta;&#8321; is &delta; &lt; 1.25. A dash means the method predicts no scene geometry.
+            </caption>
+          </table>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th rowspan="2">Scenes</th>
+                <th rowspan="2">Method</th>
+                <th colspan="1">Ray</th>
+                <th colspan="2">Radial Dist.</th>
+                <th colspan="4">Pointcloud Quality</th>
+              </tr>
+              <tr>
+                <th>Ang.&nbsp;(&deg;)&darr;</th>
+                <th>AbsRel&darr;</th><th>&delta;&#8321;&uarr;</th>
+                <th>CD&darr;</th><th>Acc&darr;</th><th>Comp&darr;</th><th>F@10cm&uarr;</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td rowspan="5">2D3DS</td><td>GeoCalib</td><td>40.713</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td></tr>
+              <tr><td>AnyCalib</td><td>37.520</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td></tr>
+              <tr><td>DA3</td><td>43.775</td><td>0.2124</td><td>0.747</td><td>0.3614</td><td>0.1744</td><td>0.5483</td><td>0.224</td></tr>
+              <tr><td>UniK3D</td><td>19.432</td><td>0.1272</td><td>0.864</td><td>0.1487</td><td>0.0981</td><td>0.1994</td><td>0.411</td></tr>
+              <tr class="highlight"><td><strong>OmniRay</strong></td><td class="best">1.619</td><td class="best">0.0568</td><td class="best">0.958</td><td class="best">0.0236</td><td class="best">0.0226</td><td class="best">0.0246</td><td class="best">0.767</td></tr>
+
+              <tr><td rowspan="5">360Loc</td><td>GeoCalib</td><td>48.223</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td></tr>
+              <tr><td>AnyCalib</td><td>42.021</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td></tr>
+              <tr><td>DA3</td><td>48.064</td><td>0.2872</td><td>0.629</td><td>0.3212</td><td>0.2121</td><td>0.4303</td><td>0.048</td></tr>
+              <tr><td>UniK3D</td><td>19.979</td><td>0.2709</td><td>0.676</td><td>0.1601</td><td>0.1455</td><td>0.1747</td><td>0.154</td></tr>
+              <tr class="highlight"><td><strong>OmniRay</strong></td><td class="best">1.274</td><td class="best">0.0713</td><td class="best">0.947</td><td class="best">0.0160</td><td class="best">0.0160</td><td class="best">0.0160</td><td class="best">0.590</td></tr>
+
+              <tr><td rowspan="5">PanoCity&dagger;</td><td>GeoCalib</td><td>47.132</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td></tr>
+              <tr><td>AnyCalib</td><td>42.335</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td></tr>
+              <tr><td>DA3</td><td>50.533</td><td>0.1819</td><td>0.774</td><td>0.3677</td><td>0.3318</td><td>0.4037</td><td>0.001</td></tr>
+              <tr><td>UniK3D</td><td>21.220</td><td>0.1940</td><td>0.815</td><td>0.2120</td><td>0.2719</td><td>0.1522</td><td>0.015</td></tr>
+              <tr class="highlight"><td><strong>OmniRay</strong></td><td class="best">1.350</td><td class="best">0.0823</td><td class="best">0.914</td><td class="best">0.0240</td><td class="best">0.0333</td><td class="best">0.0147</td><td class="best">0.141</td></tr>
+
+              <tr><td rowspan="5">CO3Dv2&dagger;</td><td>GeoCalib</td><td>3.713</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td></tr>
+              <tr><td>AnyCalib</td><td>2.711</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td></tr>
+              <tr><td>DA3</td><td class="best">2.041</td><td>0.0573</td><td>0.950</td><td>0.0288</td><td class="best">0.0199</td><td>0.0377</td><td>0.282</td></tr>
+              <tr><td>UniK3D</td><td>2.676</td><td class="best">0.0478</td><td class="best">0.963</td><td class="best">0.0277</td><td>0.0233</td><td class="best">0.0322</td><td class="best">0.293</td></tr>
+              <tr class="highlight"><td><strong>OmniRay</strong></td><td>2.967</td><td>0.0889</td><td>0.914</td><td>0.0380</td><td>0.0291</td><td>0.0469</td><td>0.173</td></tr>
+            </tbody>
+            <caption>
+              <strong>Table 5 &mdash; Per-dataset results, all metrics.</strong> Macro-averaged over test images. &dagger; unseen in training. Conventions as in Table 4. CO3Dv2 contains perspective and fisheye imagery only, so its zero-shot axis is the domain rather than the camera, and its object-masked COLMAP ground truth covers roughly 12% of pixels.
+            </caption>
+          </table>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th rowspan="2">Split</th>
+                <th rowspan="2">Method</th>
+                <th colspan="1">Ray</th>
+                <th colspan="2">Radial Dist.</th>
+                <th colspan="4">Pointcloud Quality</th>
+              </tr>
+              <tr>
+                <th>Ang.&nbsp;(&deg;)&darr;</th>
+                <th>AbsRel&darr;</th><th>&delta;&#8321;&uarr;</th>
+                <th>CD&darr;</th><th>Acc&darr;</th><th>Comp&darr;</th><th>F@10cm&uarr;</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td rowspan="5">all</td><td>GeoCalib</td><td>45.356</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td></tr>
+              <tr><td>AnyCalib</td><td>40.625</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td></tr>
+              <tr><td>DA3</td><td>47.457</td><td>0.2272</td><td>0.716</td><td>0.3501</td><td>0.2394</td><td>0.4608</td><td>0.091</td></tr>
+              <tr><td>UniK3D</td><td>20.211</td><td>0.1974</td><td>0.785</td><td>0.1736</td><td>0.1718</td><td>0.1754</td><td>0.193</td></tr>
+              <tr class="highlight"><td><strong>OmniRay</strong></td><td class="best">1.414</td><td class="best">0.0701</td><td class="best">0.940</td><td class="best">0.0212</td><td class="best">0.0240</td><td class="best">0.0184</td><td class="best">0.499</td></tr>
+
+              <tr><td rowspan="5">seen</td><td>GeoCalib</td><td>30.997</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td></tr>
+              <tr><td>AnyCalib</td><td>28.655</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td></tr>
+              <tr><td>DA3</td><td>33.028</td><td>0.2695</td><td>0.657</td><td>0.1999</td><td>0.1310</td><td>0.2688</td><td>0.125</td></tr>
+              <tr><td>UniK3D</td><td>6.336</td><td>0.1893</td><td>0.804</td><td>0.0760</td><td>0.1031</td><td>0.0488</td><td>0.242</td></tr>
+              <tr class="highlight"><td><strong>OmniRay</strong></td><td class="best">0.140</td><td class="best">0.0756</td><td class="best">0.933</td><td class="best">0.0179</td><td class="best">0.0238</td><td class="best">0.0120</td><td class="best">0.550</td></tr>
+
+              <tr><td rowspan="5">held-out&dagger;</td><td>GeoCalib</td><td>66.894</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td></tr>
+              <tr><td>AnyCalib</td><td>58.580</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td></tr>
+              <tr><td>DA3</td><td>69.102</td><td>0.1637</td><td>0.806</td><td>0.5754</td><td>0.4021</td><td>0.7488</td><td>0.040</td></tr>
+              <tr><td>UniK3D</td><td>41.022</td><td>0.2094</td><td>0.756</td><td>0.3201</td><td>0.2748</td><td>0.3654</td><td>0.120</td></tr>
+              <tr class="highlight"><td><strong>OmniRay</strong></td><td class="best">3.326</td><td class="best">0.0619</td><td class="best">0.951</td><td class="best">0.0261</td><td class="best">0.0242</td><td class="best">0.0280</td><td class="best">0.424</td></tr>
+            </tbody>
+            <caption>
+              <strong>Table 6 &mdash; Aggregate results over the 4500-sample benchmark.</strong> Conventions as in Table 4. Seen cameras are perspective, fisheye and panoramic; the held-out geometries are the catadioptric mirror and the GoPro fisheye.
+            </caption>
+          </table>
+        </div>
       </div>
 
       <div class="panel stack" id="p-abl" role="tabpanel" aria-labelledby="t-abl">
@@ -548,13 +698,17 @@
         <table>
           <thead>
             <tr>
-              <th>Ray representation</th>
-              <th>Training</th>
+              <th rowspan="2">Ray representation</th>
+              <th rowspan="2">Training</th>
+              <th colspan="3">Seen cameras</th>
+              <th colspan="2">Held-out config&dagger;</th>
+            </tr>
+            <tr>
               <th>Panorama</th>
               <th>Fisheye</th>
               <th>Pinhole</th>
-              <th>Catadioptric&dagger;</th>
-              <th>GoPro&dagger;</th>
+              <th>Catadioptric</th>
+              <th>GoPro</th>
             </tr>
           </thead>
           <tbody>
@@ -585,6 +739,7 @@
             <strong>Fig. 5 &mdash; Ablation.</strong> <strong>(a)</strong> Held-out catadioptric camera: predicted ray field and pointcloud for UniK3D, OmniRay trained without random-lens augmentation, and the full model, against the ground truth. <strong>(b)</strong> Panoramic image: the radial base alone covers only part of the sphere (orange) and leaves the reconstruction torn, while the spherical-harmonic and free-form residuals complete the field (blue) and close the geometry.
           </figcaption>
         </figure>
+        <p class="panel-note">The <strong>w/o AUG</strong> row of Table 2 isolates the random-lens sampling. Without it the seen cameras remain strong at 1.39&deg;, but the held-out catadioptric and GoPro errors rise to 30.87&deg; and 7.97&deg;; restoring it recovers 1.12&deg; and 5.53&deg; and improves the seen cameras to 0.14&deg;. Fig. 5a shows the same effect on a catadioptric example, where the unaugmented model exhibits larger ray-field and geometric errors. These results indicate that random-lens sampling is important for extending the composite representation beyond the camera configurations encountered during training. Adding ray guidance to each DPT scale (<strong>+ RG</strong>) leaves the metrics unchanged to within run-to-run variation; the injection is zero-initialized and could use the prompt if it helped, so we omit it.</p>
         <p class="panel-note">Table 3 isolates and analyses different ray representations. The radial base performs well on fisheye and pinhole cameras (1.761&deg; and 0.788&deg;) but struggles on panoramas (21.825&deg;), where a monotone radial profile is insufficient. The spherical base reduces panoramic error to 5.088&deg;, while the free-form field performs best among single representations on panoramas, fisheye, and pinhole, but reaches 11.335&deg; on the held-out catadioptric configuration. These results motivate combining a structured radial base with more flexible residuals.</p>
         <p class="panel-note">Adding an SH residual to the radial base improves panoramic and held-out accuracy; staged training achieves 0.610&deg; and 1.680&deg;, respectively, and the best GoPro result (3.393&deg;). Adding the free-form residual further improves the panorama (0.399&deg;), fisheye (1.322&deg;), and catadioptric results (1.538&deg;) in the full staged model, which also outperforms both jointly trained three-term variants across all five configurations. On pinhole cameras, the full model remains competitive at 0.418&deg;, ranking fourth behind the VGGT-initialized variant (0.330&deg;) and the two radial-plus-free-form variants. While the additional spherical residual offers little benefit for this narrow-field geometry, it supports greater flexibility across wide-field cameras. Overall, these results support the staged radial &rarr; SH &rarr; free-form composition as a balance between geometric structure and representational flexibility.</p>
       </div>
@@ -603,7 +758,7 @@
             <img src="static/images/random_lens_aug.png" alt="Random-lens augmentation sampling examples" />
           </a>
           <figcaption>
-            <strong>Fig. 7 &mdash; Random-lens augmentation.</strong> Images rendered from a single panorama under cameras drawn from the training sampling distribution. A camera is a viewing direction, a monotone radial profile, and an imaged sensor region, so one family spans narrow perspective crops, wide-angle and fisheye views, off-center and anisotropic sensors, and annular domains. The projection varies continuously from sample to sample, so no fixed map from image position to ray direction fits more than one of them. Draws falling close to either held-out geometry are rejected and never enter training.
+            <strong>Fig. 7 &mdash; Random-lens augmentation.</strong> Images rendered from a single panorama under cameras drawn from the training sampling distribution. A camera is a viewing direction, a monotone radial profile and an imaged sensor region, so one family spans narrow perspective crops, wide-angle and fisheye views, off-center and anisotropic sensors, and annular domains. The projection varies continuously from sample to sample, so no fixed map from image position to ray direction fits more than one of them. Draws falling close to either held-out geometry are rejected and never enter training.
           </figcaption>
         </figure>
         <figure>
@@ -611,7 +766,7 @@
             <img src="static/images/qualitative_2d3ds.png" alt="Qualitative reconstructions on the seen 2D3DS dataset" />
           </a>
           <figcaption>
-            <strong>Fig. 8 &mdash; Qualitative reconstructions on seen dataset: 2D3DS.</strong>
+            <strong>Fig. 8 &mdash; Qualitative reconstructions on <u>seen</u> dataset: 2D3DS</strong>
           </figcaption>
         </figure>
         <figure>
@@ -619,7 +774,7 @@
             <img src="static/images/qualitative_360loc.png" alt="Qualitative reconstructions on the seen 360Loc dataset" />
           </a>
           <figcaption>
-            <strong>Fig. 9 &mdash; Qualitative reconstructions on seen dataset: 360Loc.</strong>
+            <strong>Fig. 9 &mdash; Qualitative reconstructions on <u>seen</u> dataset: 360Loc</strong>
           </figcaption>
         </figure>
       </div>
@@ -628,7 +783,7 @@
     <section id="conclusion" class="text-block">
       <h2>Conclusion</h2>
       <p>
-        We began with two questions: how the pixel-to-ray mapping can remain both compact and expressive, and whether a single representation is necessary for every camera geometry? OmniRay answers both by composing the ray field rather than mapping every camera into one basis. A monotone radial base carries the structure conventional lenses already possess, a spherical-harmonic residual supplies the smooth deviations a radial profile cannot express, and a free-form residual accounts for the remaining local variation, each applied as a rotation on the sphere so the representation adapts to the camera without camera-type input or model selection. A shared distance module scales the predicted rays into a point cloud in a single forward pass, and sampling lenses continuously during training keeps the composition accurate on geometries it has never seen.
+        We began with two questions: how the pixel-to-ray mapping can remain both compact and expressive, and whether a single representation is necessary for every camera geometry? <strong>OmniRay</strong> answers both by composing the ray field rather than mapping every camera into one basis. A monotone radial base carries the structure conventional lenses already possess, a spherical-harmonic residual supplies the smooth deviations a radial profile cannot express, and a free-form residual accounts for the remaining local variation, each applied as a rotation on the sphere so that the representation adapts to the camera without camera-type input or model selection. A shared distance module scales the predicted rays into a point cloud in a single forward pass, and sampling lenses continuously during training keeps the composition accurate on geometries it has never seen.
       </p>
       <p>
         The oracle analysis establishes the ceilings that motivate this design, and the trained model follows them: a mean ray error of 0.14&deg; on the camera families seen in training, and 1.12&deg; on a catadioptric geometry withheld from it, where every baseline exceeds 75&deg;. The reconstruction is recovered only up to a single global scale, so all point clouds are compared after a per-image alignment. Since the representation is defined per image and per pixel, extending OmniRay to <i>N</i>-view reconstruction is a natural next step.
