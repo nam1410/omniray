@@ -284,6 +284,8 @@
     .stack > figure:last-child,
     .stack > .table-wrapper:last-child,
     .stack > .panel-note:last-child { margin-bottom: 8px; }
+    .stack > .widget { margin: 0 auto 52px; width: 100%; }
+    .stack > .widget .vtabs { margin-top: 0; }
     .stack figure img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
     .panel-note {
       font-size: 0.9rem;
@@ -373,6 +375,15 @@
       .text-block p, .intro-text { text-align: left; }
     }
   </style>
+  <link rel="stylesheet" href="demo/embed.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+    }
+  }
+  </script>
 </head>
 <body>
 
@@ -404,7 +415,7 @@
     <div class="release-links">
       <a class="pill-btn" href="https://arxiv.org/abs/2610.31645" target="_blank" rel="noopener">&#128196; arXiv</a>
       <a class="pill-btn" href="https://github.com/nam1410/omniray" target="_blank" rel="noopener">&#128187; Code</a>
-      <a class="pill-btn" href="demo/">&#127916; Demo</a>
+      <a class="pill-btn" href="#results">&#127916; Demo</a>
       <a class="pill-btn" href="https://huggingface.co/gnam8991/omniray" target="_blank" rel="noopener">&#128230; Checkpoint</a>
     </div>
   </header>
@@ -470,16 +481,66 @@
       </div>
 
       <div class="panel stack" id="p-figs" role="tabpanel" aria-labelledby="t-figs" data-active="true">
-        <figure>
-          <a href="static/images/qualitative_unseen.png" target="_blank" class="image-link" aria-label="Open image in full resolution">
-            <img src="static/images/qualitative_unseen.png" alt="Qualitative reconstructions on unseen datasets PanoCity and CO3Dv2" />
-          </a>
-          <figcaption>
-            <strong>Fig. 4 &mdash; Qualitative reconstructions on <u>unseen</u> datasets.</strong> We compare OmniRay with Depth Anything 3 and UniK3D on PanoCity and CO3Dv2 across five camera configurations. Small visualizations show viewing-ray fields; larger renderings show the corresponding pointclouds, with ground truth in the rightmost column. OmniRay better preserves scene structure in the panoramic and catadioptric examples without camera intrinsics or camera-type input.
-          </figcaption>
-        </figure>
+<div class="widget" id="benchmark-widget">
+          <div class="vtabs" role="tablist" aria-label="Camera configuration"></div>
+
+          <div class="example-head">
+            <span class="name" data-slot="name"></span>
+            <span class="src" data-slot="src"></span>
+          </div>
+
+          <div class="viewer-toolbar">
+            <span class="hint">Drag to orbit &middot; scroll to zoom &middot; right-drag to pan</span>
+            <label>Point size
+              <input type="range" min="0.003" max="0.03" step="0.001" value="0.012" aria-label="Point size">
+            </label>
+            <button type="button" data-action="reset">Reset view</button>
+          </div>
+
+          <div class="compare">
+            <div class="input-card">
+              <span class="tag">Input image</span>
+              <img data-slot="input" src="demo/assets/benchmark/panorama/input.jpg" alt="">
+            </div>
+            <div class="vstage quad">
+              <div class="vpanel">
+                <span class="tag">Depth Anything 3</span>
+                <canvas></canvas>
+                <div class="overlay"><div class="spinner"></div><p class="msg">Loading…</p></div>
+              </div>
+              <div class="vpanel">
+                <span class="tag">UniK3D</span>
+                <canvas></canvas>
+                <div class="overlay"><div class="spinner"></div><p class="msg">Loading…</p></div>
+              </div>
+              <div class="vpanel ours">
+                <span class="tag">OmniRay</span>
+                <canvas></canvas>
+                <div class="overlay"><div class="spinner"></div><p class="msg">Loading…</p></div>
+              </div>
+              <div class="vpanel">
+                <span class="tag">Ground truth</span>
+                <canvas></canvas>
+                <div class="overlay"><div class="spinner"></div><p class="msg">Loading…</p></div>
+              </div>
+            </div>
+          </div>
+
+          <p class="viewer-note views" data-slot="views" hidden></p>
+
+          <p class="viewer-note">
+            Every cloud is a point cloud in the camera frame of the single input image and is
+            drawn with no rotation applied. Each method is evaluated at the same set of pixels, so the
+            four clouds have the same points and the same colours and differ only in where those
+            points were placed. Monocular reconstruction is recovered only up to a global scale, and
+            the methods write out at very different scales, so every cloud is recentred on its median
+            point and scaled so that its 90th-percentile radius is 1 at render time only; the
+            <code>.ply</code> files keep their original coordinates.
+          </p>
+        </div>
+        <p class="panel-note"><strong>Live reconstructions on unseen datasets.</strong> One image per camera configuration from PanoCity and CO3Dv2. Drag to orbit, scroll to zoom, right-drag to pan; the four panels share one camera.</p>
         <p class="panel-note">On seen camera types, OmniRay achieves a mean ray error of 0.14&deg; and relative Chamfer distance of 0.0179, compared with 6.34&deg; and 0.0760 for UniK3D and 33.03&deg; and 0.1999 for Depth Anything 3. On the Nayar catadioptric camera &mdash; held out entirely from training &mdash; all baselines exceed 75&deg; while OmniRay achieves 1.12&deg; and 0.0131 CD; on the held-out GoPro fisheye, OmniRay achieves 5.53&deg; versus 6.34&deg; for UniK3D. On the unseen PanoCity dataset, OmniRay achieves 1.35&deg; ray error versus 21.22&deg; and 50.53&deg; for UniK3D and DA3. On CO3Dv2, OmniRay's 2.97&deg; ray error remains within a degree of both baselines.</p>
-        <p class="panel-note">Fig. 4 compares ray fields and camera-frame pointclouds on unseen PanoCity and CO3Dv2 images, with each ray field colored by its angular error. On the panorama, OmniRay keeps the road continuous while UniK3D breaks it across the image and DA3 fails to recover the ground structure. On the fisheye and GoPro rows, OmniRay keeps the road, pavement and lane markings straight where UniK3D bends them and DA3 also distorts the surrounding buildings. On the held-out catadioptric camera both baselines produce degraded reconstructions. On the CO3Dv2 pinhole example, OmniRay remains comparable to the baselines, demonstrating that the additional flexibility for wide-angle cameras does not come at the expense of pinhole imagery. On in-the-wild images, OmniRay also recovers coherent 3D structure, as shown in Fig. 6.</p>
+        <p class="panel-note">The viewer above compares camera-frame pointclouds on unseen PanoCity and CO3Dv2 images. On the panorama, OmniRay keeps the road continuous while UniK3D breaks it across the image and DA3 fails to recover the ground structure. On the fisheye and GoPro rows, OmniRay keeps the road, pavement and lane markings straight where UniK3D bends them and DA3 also distorts the surrounding buildings. On the held-out catadioptric camera both baselines produce degraded reconstructions. On the CO3Dv2 pinhole example, OmniRay remains comparable to the baselines, demonstrating that the additional flexibility for wide-angle cameras does not come at the expense of pinhole imagery. On in-the-wild images, OmniRay also recovers coherent 3D structure; see the live examples under Additional Visualizations.</p>
       </div>
 
       <div class="panel stack" id="p-tables" role="tabpanel" aria-labelledby="t-tables">
@@ -744,14 +805,44 @@
       </div>
 
       <div class="panel stack" id="p-vis" role="tabpanel" aria-labelledby="t-vis">
-        <figure>
-          <a href="static/images/in_the_wild.png" target="_blank" class="image-link" aria-label="Open image in full resolution">
-            <img src="static/images/in_the_wild.png" alt="In-the-wild reconstructions on internet photographs" />
-          </a>
-          <figcaption>
-            <strong>Fig. 6 &mdash; In-the-wild reconstructions.</strong> Qualitative reconstructions on photographs collected from the internet, shown in order as a panorama, a fisheye image, and a pinhole image. Although these camera families are represented during training, the images come from different camera instances with unknown intrinsics and lens parameters. OmniRay requires no camera metadata at inference.
-          </figcaption>
-        </figure>
+<div class="widget" id="zeroshot-widget">
+          <div class="vtabs" role="tablist" aria-label="In-the-wild example"></div>
+
+          <div class="example-head">
+            <span class="name" data-slot="name"></span>
+            <span class="src" data-slot="src"></span>
+          </div>
+
+          <div class="viewer-toolbar">
+            <span class="hint">Drag to orbit &middot; scroll to zoom &middot; right-drag to pan</span>
+            <label>Point size
+              <input type="range" min="0.003" max="0.03" step="0.001" value="0.012" aria-label="Point size">
+            </label>
+            <button type="button" data-action="reset">Reset view</button>
+          </div>
+
+          <div class="compare single">
+            <div class="input-card">
+              <span class="tag">Input image</span>
+              <img data-slot="input" src="demo/assets/zeroshot/au_march/input.jpg" alt="">
+            </div>
+            <div class="vstage single">
+              <div class="vpanel ours">
+                <span class="tag">OmniRay</span>
+                <canvas></canvas>
+                <div class="overlay"><div class="spinner"></div><p class="msg">Loading…</p></div>
+              </div>
+            </div>
+          </div>
+
+          <p class="viewer-note views" data-slot="views" hidden></p>
+
+          <p class="viewer-note">
+            Raw network output from one forward pass, coloured by the input image and subsampled for
+            the web. The cloud is recentred and scaled at render time as above.
+          </p>
+        </div>
+        <p class="panel-note"><strong>Live in-the-wild reconstructions.</strong> Photographs collected from the internet, run through OmniRay with no intrinsics, no distortion parameters and no camera-type label. These camera families are represented during training, but the images come from different camera instances with unknown lens parameters.</p>
         <figure>
           <a href="static/images/random_lens_aug.png" target="_blank" class="image-link" aria-label="Open image in full resolution">
             <img src="static/images/random_lens_aug.png" alt="Random-lens augmentation sampling examples" />
@@ -832,6 +923,11 @@
         });
       });
     })();
+  </script>
+  <script type="module">
+    import { boot } from './demo/viewer.js';
+    import { BENCHMARK, ZEROSHOT } from './demo/examples.js';
+    boot(BENCHMARK, ZEROSHOT, { base: 'demo/' });
   </script>
 </body>
 </html>

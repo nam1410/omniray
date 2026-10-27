@@ -24,9 +24,11 @@ Source for the project page only.
 ```
 index.html             the page (self-contained; CSS and JS inline)
 static/images/         figures, taken from the paper
-demo/                  interactive point-cloud viewer (three.js r164.1, pinned, via jsDelivr)
-demo/assets/benchmark/ one example per camera: input.jpg + da3 / unik3d / omniray / gt .ply
-demo/assets/zeroshot/  in-the-wild examples: input.jpg + pred.ply
+demo/viewer.js         live point-cloud viewers embedded in index.html (three.js r164.1,
+                       pinned, via jsDelivr); demo/examples.js lists the examples and
+                       demo/embed.css styles the widget. demo/index.html only redirects.
+demo/assets/benchmark/ one example per camera: input.jpg, thumb.jpg + da3 / unik3d / omniray / gt .ply
+demo/assets/zeroshot/  in-the-wild examples: input.jpg, thumb.jpg + pred.ply
 ```
 
 Point clouds are subsampled for the web and keep their original camera-frame

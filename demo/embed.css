@@ -1,0 +1,169 @@
+/* OmniRay live point-cloud widget: tab strip, input image, viewer panes.
+   Shared by demo/index.html and the project landing page, so every class
+   here is prefixed (vtabs, vstage, vpanel) to stay clear of page styles. */
+
+:root { --omni-accent: #1a73e8; --omni-accent-dark: #1152a8; --omni-accent-wash: #f0f4ff;
+        --omni-accent-strong: #1a56db; --omni-canvas-bg: #0b0e13;
+        --omni-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+        --omni-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif; }
+
+/* ---------- example widget ---------- */
+
+.widget { margin-top: 26px; }
+
+.vtabs {
+  display: flex; flex-wrap: wrap; gap: 12px;
+  justify-content: center; margin-bottom: 22px;
+}
+/* one thumbnail per example: click the picture to choose the input image */
+.vtabs button {
+  font-family: var(--omni-sans); font-size: 0.82rem; font-weight: 500;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  width: 132px; padding: 6px 6px 8px; border-radius: 8px; cursor: pointer;
+  background: #ffffff; color: #444;
+  border: 1.5px solid #e0e0e0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  transition: border-color .2s, box-shadow .2s, color .2s;
+}
+.vtabs button img {
+  width: 120px; height: 80px; object-fit: cover; border-radius: 5px;
+  background: var(--omni-canvas-bg); display: block;
+}
+.vtabs button .lbl { line-height: 1.25; text-align: center; }
+.vtabs button:hover { border-color: var(--omni-accent); color: var(--omni-accent-dark); }
+.vtabs button[aria-selected="true"] {
+  border-color: var(--omni-accent); color: var(--omni-accent-strong); font-weight: 600;
+  box-shadow: 0 0 0 2px var(--omni-accent-wash), 0 3px 10px rgba(26, 115, 232, .25);
+}
+.vtabs button:focus-visible { outline: 2px solid var(--omni-accent); outline-offset: 2px; }
+/* a camera the model never saw during training */
+.vtabs button .heldout {
+  display: block; font-family: var(--omni-mono); font-size: 0.62rem; letter-spacing: .08em;
+  text-transform: uppercase; color: #666; margin-top: 2px;
+}
+
+.example-head {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px;
+  justify-content: center; margin-bottom: 14px;
+}
+.example-head .name { font-size: 1.3rem; font-weight: 600; color: #111; }
+.example-head .src { font-size: 0.95rem; color: #666; }
+
+
+/* ---------- viewers ---------- */
+
+.viewer-toolbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 14px 20px;
+  margin: 22px 0 12px; font-size: 0.9rem; color: #666;
+}
+.viewer-toolbar .hint { display: flex; align-items: center; gap: 7px; }
+.viewer-toolbar label { display: flex; align-items: center; gap: 8px; color: #444; }
+.viewer-toolbar input[type="range"] { width: 118px; accent-color: var(--omni-accent); }
+.viewer-toolbar button {
+  font-family: var(--omni-sans); font-size: 0.88rem; padding: 6px 14px;
+  border-radius: 6px; border: 1.5px solid var(--omni-accent); background: transparent;
+  color: var(--omni-accent); cursor: pointer;
+  transition: background .2s, color .2s;
+}
+.viewer-toolbar button:hover { background: var(--omni-accent); color: #fff; }
+
+/* The input image sits beside the viewers: one photograph on the left, the
+   point clouds it was reconstructed from on the right. */
+.compare {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 2fr);
+  gap: 16px;
+  align-items: stretch;
+}
+.compare.single { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); }
+
+.input-card {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(0, 0, 0, 0.14); border-radius: 10px;
+  background: var(--omni-canvas-bg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  min-height: 240px;
+}
+.input-card img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  position: absolute; inset: 0;
+}
+
+/* four panels in a 2x2 block, all driven by one camera */
+.vstage { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.vstage.single { grid-template-columns: 1fr; }
+.vstage.quad { grid-template-columns: repeat(2, 1fr); }
+
+/* Dark panels inset into the light page: the clouds are pale points and need
+   a dark backdrop to stay readable. */
+.vpanel {
+  position: relative;
+  border: 1px solid rgba(0, 0, 0, 0.14); border-radius: 10px;
+  background: var(--omni-canvas-bg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  min-height: 200px;
+}
+.vpanel canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+.vpanel .tag, .input-card .tag {
+  position: absolute; top: 10px; left: 12px; z-index: 3;
+  font-family: var(--omni-mono); font-size: 0.68rem; letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #dfe6ea; background: rgba(10, 14, 20, .62);
+  border: 1px solid rgba(255, 255, 255, .14);
+  padding: 3px 9px; border-radius: 5px;
+  pointer-events: none;
+}
+
+.vstage.single .vpanel { aspect-ratio: auto; height: 100%; min-height: 360px; }
+
+/* the method this page is presenting, marked out among the baselines */
+.vpanel.ours { border-color: var(--omni-accent); box-shadow: 0 0 0 2px var(--omni-accent-wash), 0 4px 12px rgba(26, 115, 232, .22); }
+.vpanel.ours .tag {
+  color: #fff; background: var(--omni-accent-strong);
+  border-color: rgba(255, 255, 255, .3); font-weight: 700;
+}
+
+.vpanel .overlay {
+  position: absolute; inset: 0; z-index: 4;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; text-align: center; padding: 22px;
+  background: var(--omni-canvas-bg); color: #b9c3cc;
+  font-size: 0.9rem;
+}
+.vpanel .overlay[hidden] { display: none; }
+.vpanel .overlay.error { color: #ffb4a8; }
+.vpanel .overlay .spinner {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, .18);
+  border-top-color: #6fb9c7;
+  animation: spin .9s linear infinite;
+}
+.vpanel .overlay.error .spinner { display: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .vpanel .overlay .spinner { animation-duration: 3s; }
+  html { scroll-behavior: auto; }
+}
+
+.viewer-note { font-size: 0.9rem; color: #555; line-height: 1.6; margin: 14px 0 0; max-width: 80ch; }
+/* per-example caveats, set apart rather than buried */
+.viewer-note.views {
+  border-left: 3px solid #e0e0e0; background: #f8f9fa;
+  border-radius: 0 6px 6px 0; padding: 10px 14px; color: #444;
+}
+
+
+@media (max-width: 900px) {
+  .compare, .compare.single { grid-template-columns: 1fr; }
+  .input-card { aspect-ratio: 4 / 3; min-height: 0; }
+  .vstage.single .vpanel { aspect-ratio: 4 / 3; height: auto; min-height: 0; }
+}
+@media (max-width: 640px) {
+  .vstage.quad { grid-template-columns: 1fr; }
+}

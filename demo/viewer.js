@@ -1,5 +1,5 @@
 /*
- * OmniRay project page — live point-cloud viewers.
+ * OmniRay project page — live point-cloud viewers, embedded in index.html.
  *
  * three.js r164.1, pinned, loaded from jsDelivr via the import map in index.html.
  * Adapted from the CAM3R demo viewer (nam1410.github.io/cam3r/demo).
@@ -156,7 +156,7 @@ function makePanel(el) {
 class Rig {
   constructor(root) {
     this.root = root;
-    this.panels = Array.from(root.querySelectorAll('.panel')).map(makePanel);
+    this.panels = Array.from(root.querySelectorAll('.vpanel')).map(makePanel);
     this.master = this.panels[0].camera;
     this.pointSize = DEFAULT_POINT_SIZE;
     this.loader = new PLYLoader();
@@ -316,11 +316,11 @@ class Rig {
 
 /* ------------------------------------------------------- section wiring */
 
-function wireSection(rootId, examples, urlsFor, labelsFor, onSelect) {
+function wireSection(rootId, examples, urlsFor, labelsFor, onSelect, base) {
   const root = document.getElementById(rootId);
   if (!root) return null;
 
-  const stage = root.querySelector('.stage');
+  const stage = root.querySelector('.vstage');
   let rig;
   try {
     rig = new Rig(stage);
@@ -328,7 +328,7 @@ function wireSection(rootId, examples, urlsFor, labelsFor, onSelect) {
     // one section failing (no context left, driver bug) must not take the
     // other one down with it
     console.error('[omniray] could not start the viewer in #' + rootId, err);
-    root.querySelectorAll('.panel .overlay').forEach((o) => {
+    root.querySelectorAll('.vpanel .overlay').forEach((o) => {
       o.hidden = false;
       o.classList.add('error');
       o.querySelector('.msg').textContent =
@@ -346,6 +346,7 @@ function wireSection(rootId, examples, urlsFor, labelsFor, onSelect) {
   const resetBtn = root.querySelector('button[data-action="reset"]');
   if (resetBtn) resetBtn.addEventListener('click', () => rig.home());
 
+  buildTabs(root, examples, base);
   wireTabs(root, (i) => {
     onSelect(root, examples[i]);
     rig.request(urlsFor(examples[i]), labelsFor(examples[i]));
@@ -354,11 +355,43 @@ function wireSection(rootId, examples, urlsFor, labelsFor, onSelect) {
 }
 
 /**
- * Wire a .tabs strip inside root: click and left/right arrow selection, with
+ * Fill the .vtabs strip with one thumbnail button per example, so the visitor
+ * chooses an input image by clicking the picture itself.
+ */
+function buildTabs(root, examples, base) {
+  const strip = root.querySelector('.vtabs');
+  if (!strip) return;
+  strip.innerHTML = '';
+  examples.forEach((ex, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.setAttribute('role', 'tab');
+    b.setAttribute('aria-selected', String(i === 0));
+    const img = document.createElement('img');
+    img.src = base + ex.dir + '/thumb.jpg';
+    img.alt = '';
+    img.loading = 'lazy';
+    const lbl = document.createElement('span');
+    lbl.className = 'lbl';
+    lbl.textContent = ex.tab || ex.name;
+    if (ex.heldout) {
+      const h = document.createElement('span');
+      h.className = 'heldout';
+      h.textContent = 'held out';
+      lbl.appendChild(h);
+    }
+    b.appendChild(img);
+    b.appendChild(lbl);
+    strip.appendChild(b);
+  });
+}
+
+/**
+ * Wire a .vtabs strip inside root: click and left/right arrow selection, with
  * aria-selected kept in sync and the first tab chosen on load.
  */
 function wireTabs(root, onIndex) {
-  const tabs = Array.from(root.querySelectorAll('.tabs button'));
+  const tabs = Array.from(root.querySelectorAll('.vtabs button'));
   let current = -1;
 
   function select(i) {
@@ -393,11 +426,11 @@ function checkWebGL() {
   }
 }
 
-function setInput(root, ex) {
+function setInput(root, ex, base) {
   root.querySelector('[data-slot="name"]').textContent = ex.name;
   root.querySelector('[data-slot="src"]').textContent = ex.source;
   const img = root.querySelector('[data-slot="input"]');
-  img.src = ex.dir + '/input.jpg';
+  img.src = base + ex.dir + '/input.jpg';
   img.alt = ex.name + ': the single input image';
   const note = root.querySelector('[data-slot="views"]');
   if (note) {
@@ -408,11 +441,12 @@ function setInput(root, ex) {
 
 /* ------------------------------------------------------------------ data */
 
-export function boot(BENCHMARK, ZEROSHOT) {
+export function boot(BENCHMARK, ZEROSHOT, opts = {}) {
+  const base = opts.base || '';   // prefix for asset paths, e.g. 'demo/' from the landing page
   const guard = (fn) => { try { fn(); } catch (err) { console.error('[omniray]', err); } };
 
   if (!checkWebGL()) {
-    document.querySelectorAll('.panel .overlay').forEach((o) => {
+    document.querySelectorAll('.vpanel .overlay').forEach((o) => {
       o.hidden = false;
       o.classList.add('error');
       o.querySelector('.msg').textContent =
@@ -425,15 +459,17 @@ export function boot(BENCHMARK, ZEROSHOT) {
   // Four panels, one per method, all driven by the rig's single master camera.
   guard(() => wireSection(
     'benchmark-widget', BENCHMARK,
-    (ex) => BENCHMARK_METHODS.map(([key]) => ex.dir + '/' + key + '.ply'),
+    (ex) => BENCHMARK_METHODS.map(([key]) => base + ex.dir + '/' + key + '.ply'),
     () => BENCHMARK_METHODS.map(([, label]) => label),
-    (root, ex) => setInput(root, ex)
+    (root, ex) => setInput(root, ex, base),
+    base
   ));
 
   guard(() => wireSection(
     'zeroshot-widget', ZEROSHOT,
-    (ex) => [ex.dir + '/pred.ply'],
+    (ex) => [base + ex.dir + '/pred.ply'],
     () => ['OmniRay prediction'],
-    (root, ex) => setInput(root, ex)
+    (root, ex) => setInput(root, ex, base),
+    base
   ));
 }
