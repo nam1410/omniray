@@ -86,7 +86,7 @@ function robustFrame(geometry) {
 
 /* ------------------------------------------------------------------ panel */
 
-function makePanel(el) {
+function makePanel(el, background) {
   const canvas = el.querySelector('canvas');
   const overlay = el.querySelector('.overlay');
   const overlayText = overlay.querySelector('.msg');
@@ -97,7 +97,7 @@ function makePanel(el) {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0b0e13);
+  scene.background = new THREE.Color(background);
 
   const camera = new THREE.PerspectiveCamera(50, 4 / 3, 0.01, 500);
   camera.up.set(0, -1, 0);          // camera-frame clouds: +y is down
@@ -154,9 +154,15 @@ function makePanel(el) {
  * loop that only runs while the rig is on screen.
  */
 class Rig {
-  constructor(root) {
+  /**
+   * linked (default true): every panel shares one master camera, for comparing
+   * methods on the same scene. Unlinked: each panel orbits its own camera, for
+   * showing different scenes side by side (the teaser).
+   */
+  constructor(root, { linked = true, background = 0x0b0e13 } = {}) {
     this.root = root;
-    this.panels = Array.from(root.querySelectorAll('.vpanel')).map(makePanel);
+    this.linked = linked;
+    this.panels = Array.from(root.querySelectorAll('.vpanel')).map((el) => makePanel(el, background));
     this.master = this.panels[0].camera;
     this.pointSize = DEFAULT_POINT_SIZE;
     this.loader = new PLYLoader();
@@ -166,7 +172,7 @@ class Rig {
     this.pending = null;
 
     this.controls = this.panels.map((p) => {
-      const c = new OrbitControls(this.master, p.canvas);
+      const c = new OrbitControls(linked ? this.master : p.camera, p.canvas);
       c.enableDamping = false;      // several controls on one camera must not fight
       c.enablePan = true;
       c.screenSpacePanning = true;
@@ -177,8 +183,10 @@ class Rig {
       return c;
     });
     // every control shares one target object, so panning stays in lockstep
-    for (let i = 1; i < this.controls.length; i++) {
-      this.controls[i].target = this.controls[0].target;
+    if (linked) {
+      for (let i = 1; i < this.controls.length; i++) {
+        this.controls[i].target = this.controls[0].target;
+      }
     }
 
     this.home();
@@ -204,11 +212,14 @@ class Rig {
   }
 
   home() {
-    this.master.position.set(...HOME_POSITION);
-    this.master.up.set(0, -1, 0);
-    this.controls[0].target.set(0, 0, 0);
-    this.master.lookAt(0, 0, 0);
-    this.controls.forEach((c) => c.update());
+    this.panels.forEach((p) => {
+      // a square panel has less horizontal room than a 4:3 one, so back off a little
+      const k = p.camera.aspect < 1.2 ? 1.3 : 1;
+      p.camera.position.set(HOME_POSITION[0] * k, HOME_POSITION[1] * k, HOME_POSITION[2] * k);
+      p.camera.up.set(0, -1, 0);
+      p.camera.lookAt(0, 0, 0);
+    });
+    this.controls.forEach((c) => { c.target.set(0, 0, 0); c.update(); });
   }
 
   setPointSize(v) {
@@ -301,7 +312,7 @@ class Rig {
 
   render() {
     this.panels.forEach((p, i) => {
-      if (i > 0) {
+      if (this.linked && i > 0) {
         // slave cameras track the master pose but keep their own aspect
         p.camera.position.copy(this.master.position);
         p.camera.quaternion.copy(this.master.quaternion);
@@ -316,28 +327,25 @@ class Rig {
 
 /* ------------------------------------------------------- section wiring */
 
-function wireSection(rootId, examples, urlsFor, labelsFor, onSelect, base) {
-  const root = document.getElementById(rootId);
-  if (!root) return null;
-
-  const stage = root.querySelector('.vstage');
-  let rig;
+/** Start a rig on the .vstage inside root, or show an error in its panels. */
+function startRig(root, opts) {
   try {
-    rig = new Rig(stage);
+    return new Rig(root.querySelector('.vstage'), opts);
   } catch (err) {
     // one section failing (no context left, driver bug) must not take the
     // other one down with it
-    console.error('[omniray] could not start the viewer in #' + rootId, err);
+    console.error('[omniray] could not start the viewer in #' + root.id, err);
     root.querySelectorAll('.vpanel .overlay').forEach((o) => {
       o.hidden = false;
       o.classList.add('error');
       o.querySelector('.msg').textContent =
-        'The live viewer could not start in this browser. The figures on the ' +
-        'project page show the same reconstructions.';
+        'The live viewer could not start in this browser.';
     });
     return null;
   }
+}
 
+function wireToolbar(root, rig) {
   const sizeInput = root.querySelector('input[type="range"]');
   if (sizeInput) {
     sizeInput.value = String(DEFAULT_POINT_SIZE);
@@ -345,6 +353,14 @@ function wireSection(rootId, examples, urlsFor, labelsFor, onSelect, base) {
   }
   const resetBtn = root.querySelector('button[data-action="reset"]');
   if (resetBtn) resetBtn.addEventListener('click', () => rig.home());
+}
+
+function wireSection(rootId, examples, urlsFor, labelsFor, onSelect, base) {
+  const root = document.getElementById(rootId);
+  if (!root) return null;
+  const rig = startRig(root, { linked: true });
+  if (!rig) return null;
+  wireToolbar(root, rig);
 
   buildTabs(root, examples, base);
   wireTabs(root, (i) => {
@@ -441,6 +457,30 @@ function setInput(root, ex, base) {
 
 /* ------------------------------------------------------------------ data */
 
+/**
+ * The teaser: one column per camera family, each an input image over its own
+ * OmniRay cloud. Different scenes, so the panels are not linked.
+ */
+function wireTeaser(rootId, examples, base) {
+  const root = document.getElementById(rootId);
+  if (!root || !examples) return null;
+  // white panes, like the paper figure the teaser reproduces
+  const rig = startRig(root, { linked: false, background: 0xffffff });
+  if (!rig) return null;
+  wireToolbar(root, rig);
+  root.querySelectorAll('[data-slot="input"]').forEach((img, i) => {
+    const ex = examples[i];
+    if (!ex) return;
+    img.src = base + ex.dir + '/input.jpg';
+    img.alt = ex.tab + ' input image from ' + ex.source;
+  });
+  rig.request(
+    examples.map((ex) => base + ex.dir + '/omniray.ply'),
+    examples.map((ex) => ex.tab)
+  );
+  return rig;
+}
+
 export function boot(BENCHMARK, ZEROSHOT, opts = {}) {
   const base = opts.base || '';   // prefix for asset paths, e.g. 'demo/' from the landing page
   const guard = (fn) => { try { fn(); } catch (err) { console.error('[omniray]', err); } };
@@ -455,6 +495,8 @@ export function boot(BENCHMARK, ZEROSHOT, opts = {}) {
     });
     return;
   }
+
+  guard(() => wireTeaser('teaser-widget', opts.teaser, base));
 
   // Four panels, one per method, all driven by the rig's single master camera.
   guard(() => wireSection(

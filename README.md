@@ -29,6 +29,7 @@ demo/viewer.js         live point-cloud viewers embedded in index.html (three.js
                        demo/embed.css styles the widget. demo/index.html only redirects.
 demo/assets/benchmark/ one example per camera: input.jpg, thumb.jpg + da3 / unik3d / omniray / gt .ply
 demo/assets/zeroshot/  in-the-wild examples: input.jpg, thumb.jpg + pred.ply
+demo/assets/teaser/    Fig. 1 columns (pinhole, GoPro, fisheye, catadioptric, panorama): input.jpg + omniray.ply
 ```
 
 Point clouds are subsampled for the web and keep their original camera-frame

@@ -33,3 +33,13 @@ export const ZEROSHOT = [
   { key: 'pinhole_table', dir: 'assets/zeroshot/pinhole_table', tab: 'Pinhole, table',
     name: 'Pinhole table', source: 'phone photograph' }
 ];
+
+/* Teaser (Fig. 1): one OmniRay reconstruction per camera family, paper order.
+   Each directory holds input.jpg and omniray.ply. */
+export const TEASER = [
+  { key: 'pinhole', dir: 'assets/teaser/pinhole', tab: 'Pinhole', source: 'CO3Dv2' },
+  { key: 'gopro', dir: 'assets/teaser/gopro', tab: 'GoPro', source: 'PanoCity', heldout: true },
+  { key: 'fisheye', dir: 'assets/teaser/fisheye', tab: 'Fisheye', source: '2D3DS' },
+  { key: 'catadioptric', dir: 'assets/teaser/catadioptric', tab: 'Catadioptric', source: '2D3DS', heldout: true },
+  { key: 'panorama', dir: 'assets/teaser/panorama', tab: 'Panorama', source: '360Loc' }
+];

@@ -159,6 +159,58 @@
 }
 
 
+/* teaser: the paper's Fig. 1 as a live diagram. Serif type, light panel,
+   coloured arrows from each input through the OmniRay bar to its cloud. */
+.fig1-wrap { overflow-x: auto; }
+.fig1 {
+  --fig-serif: "Times New Roman", Times, Georgia, serif;
+  font-family: var(--fig-serif);
+  background: #f7f8fa; border: 1px solid #e3e6ea; border-radius: 16px;
+  padding: 26px 22px 18px;
+  display: grid;
+  grid-template-columns: 84px repeat(5, minmax(0, 1fr));
+  column-gap: 16px; row-gap: 0;
+  align-items: center;
+  min-width: 860px;
+}
+.fig1 .rowlab { font-style: italic; font-size: 1.05rem; color: #222; text-align: center; }
+.fig1 .cam { text-align: center; font-size: 1.15rem; color: #111; padding-bottom: 10px; }
+.fig1 .cam .heldout {
+  display: block; font-family: var(--omni-mono); font-size: 0.6rem; letter-spacing: .08em;
+  text-transform: uppercase; color: #666; line-height: 1.4;
+}
+.fig1 .in { display: flex; align-items: center; justify-content: center; height: 170px; }
+.fig1 .in img {
+  max-width: 100%; max-height: 170px; width: auto; height: auto;
+  object-fit: contain; display: block; border: 1px solid #d7dadf; background: #fff;
+}
+.fig1 .arrow { display: flex; justify-content: center; height: 46px; }
+.fig1 .arrow svg { height: 46px; width: 18px; display: block; }
+.fig1 .arrow line { stroke: var(--col); stroke-width: 2.2; }
+.fig1 .arrow polygon { fill: var(--col); }
+.fig1 .bar {
+  grid-column: 2 / -1;
+  border: 2px solid #8a8f96; border-radius: 10px; background: #f0f1f3;
+  text-align: center; padding: 8px 12px 10px;
+}
+.fig1 .bar .name { font-weight: 700; font-size: 1.9rem; line-height: 1.2; color: #111; }
+.fig1 .bar .sub { font-style: italic; font-size: 1.05rem; color: #333; }
+.fig1 .vpanel {
+  aspect-ratio: 1 / 1; min-height: 0;
+  background: #fff; border: 1px solid #d7dadf; border-radius: 6px; box-shadow: none;
+}
+.fig1 .vpanel .overlay { background: #fff; color: #555; }
+.fig1 .vpanel .overlay .spinner { border-color: rgba(0, 0, 0, .12); border-top-color: var(--omni-accent); }
+.fig1 .caption {
+  grid-column: 2 / -1; text-align: center; font-style: italic; font-size: 1.05rem;
+  color: #333; padding-top: 14px;
+}
+.fig1 .c1 { --col: #e8438a; }
+.fig1 .c2 { --col: #8b7fe8; }
+.fig1 .c3 { --col: #1f8a8a; }
+.fig1 .c4 { --col: #8a7a3a; }
+.fig1 .c5 { --col: #e8821e; }
+
 @media (max-width: 900px) {
   .compare, .compare.single { grid-template-columns: 1fr; }
   .input-card { aspect-ratio: 4 / 3; min-height: 0; }
