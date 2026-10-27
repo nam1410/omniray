@@ -24,6 +24,16 @@ Source for the project page only.
 ```
 index.html             the page (self-contained; CSS and JS inline)
 static/images/         figures, taken from the paper
+demo/                  interactive point-cloud viewer (three.js r164.1, pinned, via jsDelivr)
+demo/assets/benchmark/ one example per camera: input.jpg + da3 / unik3d / omniray / gt .ply
+demo/assets/zeroshot/  in-the-wild examples: input.jpg + pred.ply
 ```
+
+Point clouds are subsampled for the web and keep their original camera-frame
+coordinates; the viewer recentres and rescales them at render time only.
+
+TODO: the predicted ray fields (`*_rays.ply`, unit vectors on the sphere) exist for every
+example but are not uploaded yet. Adding them would roughly double the asset size (~28 MB
+today); a "show rays" toggle in the viewer is the planned way to expose them.
 
 Served by GitHub Pages from `main` at `/`.
