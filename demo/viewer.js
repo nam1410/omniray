@@ -31,7 +31,21 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
 
-const DEFAULT_POINT_SIZE = 0.012;
+/* Point size. The clouds differ a lot in density (about 3k points for the
+   CO3Dv2 banana, 200k for the in-the-wild images), and after normalisation
+   they all fill the same unit-sized frame, so one fixed size is either a
+   sparse dust or a solid blob. The default therefore grows with 1/sqrt(n):
+   REF_POINT_SIZE is the size a 40k-point cloud gets. An example can pin a
+   size explicitly (examples.js: size / sizes), and every panel has a slider
+   that scales its own cloud by 2^v, v in [-2, 2]. */
+const REF_POINT_SIZE = 0.012;
+const REF_POINTS = 40000;
+const MIN_POINT_SIZE = 0.004, MAX_POINT_SIZE = 0.06;
+
+function autoPointSize(n) {
+  const s = REF_POINT_SIZE * Math.sqrt(REF_POINTS / Math.max(1, n));
+  return Math.min(MAX_POINT_SIZE, Math.max(MIN_POINT_SIZE, s));
+}
 
 /* Home pose: behind and slightly above the camera that took the picture,
    looking forward along +z (the scene's +y points down, so "above" is -y). */
@@ -91,6 +105,15 @@ function makePanel(el, background) {
   const overlay = el.querySelector('.overlay');
   const overlayText = overlay.querySelector('.msg');
 
+  // per-panel point-size slider, in the panel's bottom-right corner
+  const sizeBox = document.createElement('label');
+  sizeBox.className = 'psize';
+  sizeBox.title = 'Point size for this cloud';
+  sizeBox.innerHTML = '<span>size</span>' +
+    '<input type="range" min="-2" max="2" step="0.1" value="0" aria-label="Point size for this cloud">';
+  el.appendChild(sizeBox);
+  const sizeInput = sizeBox.querySelector('input');
+
   const renderer = new THREE.WebGLRenderer({
     canvas, antialias: true, powerPreference: 'high-performance'
   });
@@ -103,20 +126,26 @@ function makePanel(el, background) {
   camera.up.set(0, -1, 0);          // camera-frame clouds: +y is down
   camera.position.set(...HOME_POSITION);
 
-  return {
-    el, canvas, renderer, scene, camera, overlay, overlayText,
+  const panel = {
+    el, canvas, renderer, scene, camera, overlay, overlayText, sizeInput,
     points: null,
+    baseSize: REF_POINT_SIZE,   // the default for the cloud on show
+    mult: 0,                    // slider position: size = baseSize * 2^mult
     status(kind, text) {
       if (kind === 'hidden') { overlay.hidden = true; return; }
       overlay.hidden = false;
       overlay.classList.toggle('error', kind === 'error');
       overlayText.textContent = text;
     },
+    /** size: explicit default for this cloud; undefined picks one from the count. */
     setCloud(geometry, size) {
       this.clear();
       const { center, radius } = robustFrame(geometry);
+      const n = geometry.getAttribute('position').count;
+      this.baseSize = (typeof size === 'number' && size > 0) ? size : autoPointSize(n);
+      this.setMult(0);
       const material = new THREE.PointsMaterial({
-        size: size, vertexColors: true, sizeAttenuation: true
+        size: this.baseSize, vertexColors: true, sizeAttenuation: true
       });
       if (!geometry.hasAttribute('color')) {
         material.vertexColors = false;
@@ -128,6 +157,11 @@ function makePanel(el, background) {
       pts.position.copy(center).multiplyScalar(-1 / radius);
       this.points = pts;
       this.scene.add(pts);
+    },
+    setMult(v) {
+      this.mult = v;
+      this.sizeInput.value = String(v);
+      if (this.points) this.points.material.size = this.baseSize * Math.pow(2, v);
     },
     clear() {
       if (!this.points) return;
@@ -145,6 +179,8 @@ function makePanel(el, background) {
       return { w, h };
     }
   };
+  sizeInput.addEventListener('input', () => panel.setMult(parseFloat(sizeInput.value)));
+  return panel;
 }
 
 /* ------------------------------------------------------------------- rig */
@@ -164,7 +200,6 @@ class Rig {
     this.linked = linked;
     this.panels = Array.from(root.querySelectorAll('.vpanel')).map((el) => makePanel(el, background));
     this.master = this.panels[0].camera;
-    this.pointSize = DEFAULT_POINT_SIZE;
     this.loader = new PLYLoader();
     this.token = 0;
     this.visible = false;
@@ -202,7 +237,7 @@ class Rig {
       if (this.pending) {
         const q = this.pending;
         this.pending = null;
-        this.show(q.urls, q.labels);
+        this.show(q.urls, q.labels, q.sizes);
       }
     }, { rootMargin: '200px' });
     io.observe(root);
@@ -222,19 +257,19 @@ class Rig {
     this.controls.forEach((c) => { c.target.set(0, 0, 0); c.update(); });
   }
 
+  /** Scale every panel's cloud by 2^v (the toolbar slider). */
   setPointSize(v) {
-    this.pointSize = v;
-    this.panels.forEach((p) => { if (p.points) p.points.material.size = v; });
+    this.panels.forEach((p) => p.setMult(v));
   }
 
   /**
    * Ask for a set of clouds. Nothing is fetched until the rig scrolls into
    * view, so opening the page does not pull every example at once.
    */
-  request(urls, labels) {
-    if (this.visible) return this.show(urls, labels);
+  request(urls, labels, sizes) {
+    if (this.visible) return this.show(urls, labels, sizes);
     this.token++;
-    this.pending = { urls, labels };
+    this.pending = { urls, labels, sizes };
     this.panels.forEach((p, i) => {
       p.clear();
       p.status('loading', 'Loading ' + labels[i] + '…');
@@ -242,8 +277,11 @@ class Rig {
     return Promise.resolve([]);
   }
 
-  /** Load a set of urls (one per panel) and reframe once they are in. */
-  async show(urls, labels) {
+  /**
+   * Load a set of urls (one per panel) and reframe once they are in.
+   * sizes (optional): one explicit default point size per panel.
+   */
+  async show(urls, labels, sizes) {
     this.token++;
     const mine = this.token;
     const results = await Promise.all(
@@ -256,7 +294,7 @@ class Rig {
           (geometry) => {
             if (mine !== this.token) { geometry.dispose(); resolve(false); return; }
             try {
-              panel.setCloud(geometry, this.pointSize);
+              panel.setCloud(geometry, sizes && sizes[i]);
               panel.status('hidden');
               resolve(true);
             } catch (err) {
@@ -348,14 +386,18 @@ function startRig(root, opts) {
 function wireToolbar(root, rig) {
   const sizeInput = root.querySelector('input[type="range"]');
   if (sizeInput) {
-    sizeInput.value = String(DEFAULT_POINT_SIZE);
+    sizeInput.value = '0';
     sizeInput.addEventListener('input', () => rig.setPointSize(parseFloat(sizeInput.value)));
   }
   const resetBtn = root.querySelector('button[data-action="reset"]');
-  if (resetBtn) resetBtn.addEventListener('click', () => rig.home());
+  if (resetBtn) resetBtn.addEventListener('click', () => {
+    rig.home();
+    rig.setPointSize(0);
+    if (sizeInput) sizeInput.value = '0';
+  });
 }
 
-function wireSection(rootId, examples, urlsFor, labelsFor, onSelect, base) {
+function wireSection(rootId, examples, urlsFor, labelsFor, sizesFor, onSelect, base) {
   const root = document.getElementById(rootId);
   if (!root) return null;
   const rig = startRig(root, { linked: true });
@@ -365,7 +407,7 @@ function wireSection(rootId, examples, urlsFor, labelsFor, onSelect, base) {
   buildTabs(root, examples, base);
   wireTabs(root, (i) => {
     onSelect(root, examples[i]);
-    rig.request(urlsFor(examples[i]), labelsFor(examples[i]));
+    rig.request(urlsFor(examples[i]), labelsFor(examples[i]), sizesFor(examples[i]));
   });
   return rig;
 }
@@ -476,7 +518,8 @@ function wireTeaser(rootId, examples, base) {
   });
   rig.request(
     examples.map((ex) => base + ex.dir + '/omniray.ply'),
-    examples.map((ex) => ex.tab)
+    examples.map((ex) => ex.tab),
+    examples.map((ex) => ex.size)
   );
   return rig;
 }
@@ -503,6 +546,8 @@ export function boot(BENCHMARK, ZEROSHOT, opts = {}) {
     'benchmark-widget', BENCHMARK,
     (ex) => BENCHMARK_METHODS.map(([key]) => base + ex.dir + '/' + key + '.ply'),
     () => BENCHMARK_METHODS.map(([, label]) => label),
+    // ex.sizes = { da3: .., gt: .. } pins one method; ex.size pins all four
+    (ex) => BENCHMARK_METHODS.map(([key]) => (ex.sizes && ex.sizes[key]) ?? ex.size),
     (root, ex) => setInput(root, ex, base),
     base
   ));
@@ -511,6 +556,7 @@ export function boot(BENCHMARK, ZEROSHOT, opts = {}) {
     'zeroshot-widget', ZEROSHOT,
     (ex) => [base + ex.dir + '/pred.ply'],
     () => ['OmniRay prediction'],
+    (ex) => [ex.size],
     (root, ex) => setInput(root, ex, base),
     base
   ));

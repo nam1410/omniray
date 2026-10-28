@@ -35,6 +35,12 @@ demo/assets/teaser/    Fig. 1 columns (pinhole, GoPro, fisheye, catadioptric, pa
 Point clouds are subsampled for the web and keep their original camera-frame
 coordinates; the viewer recentres and rescales them at render time only.
 
+Point size: every panel has its own slider (bottom-right corner), and the toolbar
+slider moves all panels of a section together. The default grows with 1/sqrt(points)
+so a 3k-point object and a 200k-point scene both read as surfaces (`autoPointSize` in
+`demo/viewer.js`); an example can pin its own default with `size` (or per-method
+`sizes`) in `demo/examples.js`.
+
 TODO: the predicted ray fields (`*_rays.ply`, unit vectors on the sphere) exist for every
 example but are not uploaded yet. Adding them would roughly double the asset size (~28 MB
 today); a "show rays" toggle in the viewer is the planned way to expose them.

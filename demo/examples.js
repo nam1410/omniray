@@ -1,7 +1,8 @@
 /* Example lists shared by demo/index.html and the landing page. dir is relative to demo/. */
 
 /* Each benchmark example directory holds input.jpg plus da3.ply, unik3d.ply,
-   omniray.ply and gt.ply, all sampled at the same pixels. */
+   omniray.ply and gt.ply, all sampled at the same pixels. Optional: size (one
+   default point size for all four panels) or sizes: { da3, unik3d, omniray, gt }. */
 export const BENCHMARK = [
   { key: 'panorama', dir: 'assets/benchmark/panorama', tab: 'Panorama',
     name: 'Equirectangular panorama', source: 'PanoCity, never trained on' },
@@ -19,11 +20,15 @@ export const BENCHMARK = [
     note: 'CO3Dv2 ground truth is object-masked, so all four clouds cover the object only.' }
 ];
 
+/* size: default point size for the cloud (world units, after normalisation).
+   Left out, the viewer picks one from the point count (viewer.js, autoPointSize).
+   The two 360° panoramas are viewed from inside the sphere, so the auto value
+   for their 131k points reads as thin; they get a slightly larger default. */
 export const ZEROSHOT = [
   { key: 'au_march', dir: 'assets/zeroshot/au_march', tab: 'Panorama, street',
-    name: 'Street panorama', source: 'equirectangular photograph from the internet' },
+    name: 'Street panorama', source: 'equirectangular photograph from the internet', size: 0.008 },
   { key: 'biblioteca', dir: 'assets/zeroshot/biblioteca', tab: 'Panorama, indoor',
-    name: 'Indoor panorama', source: 'equirectangular photograph from the internet' },
+    name: 'Indoor panorama', source: 'equirectangular photograph from the internet', size: 0.008 },
   { key: 'casa_de_murillo', dir: 'assets/zeroshot/casa_de_murillo', tab: 'Circular fisheye',
     name: 'Circular fisheye', source: 'photograph from the internet' },
   { key: 'fisheye_bedroom', dir: 'assets/zeroshot/fisheye_bedroom', tab: 'Fisheye, bedroom',
